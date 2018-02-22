@@ -58,9 +58,9 @@ define compile_ethernet_driver
 	echo Compiling Ethernet Driver
 	$(MAKE) -C $(XDMA_PATH)
 	$(MAKE) -C $(XETHERNET0_PATH)
-	$(MAKE) -C $(XETHERNET1_PATH)
-	$(MAKE) -C $(XETHERNET2_PATH)
-	$(MAKE) -C $(XETHERNET3_PATH)
+	#$(MAKE) -C $(XETHERNET1_PATH)
+	#$(MAKE) -C $(XETHERNET2_PATH)
+	#$(MAKE) -C $(XETHERNET3_PATH)
 endef
 
 define clean_performance_driver
@@ -83,9 +83,9 @@ define clean_ethernet_driver
 	echo Cleaning Ethernet Driver
 	$(MAKE) -C $(XDMA_PATH) clean
 	$(MAKE) -C $(XETHERNET0_PATH) clean
-	$(MAKE) -C $(XETHERNET1_PATH) clean
-	$(MAKE) -C $(XETHERNET2_PATH) clean
-	$(MAKE) -C $(XETHERNET3_PATH) clean
+	#$(MAKE) -C $(XETHERNET1_PATH) clean
+	#$(MAKE) -C $(XETHERNET2_PATH) clean
+	#$(MAKE) -C $(XETHERNET3_PATH) clean
 endef
 
 define insert_performance_driver
@@ -116,9 +116,9 @@ define insert_ethernet_driver
 	$(INSMOD) $(XDMA_PATH)/$(DMA_DRIVER_NAME); sleep $(SLEEP_TIME)
 	$(MKNOD_CMD) /dev/$(DMA_STATS_FILE) c $(MKNOD) 0
 	$(INSMOD) $(XETHERNET0_PATH)/$(XETHERNET0_DRIVER_NAME); sleep $(SLEEP_TIME)
-	$(INSMOD) $(XETHERNET1_PATH)/$(XETHERNET1_DRIVER_NAME); sleep $(SLEEP_TIME)
-	$(INSMOD) $(XETHERNET2_PATH)/$(XETHERNET2_DRIVER_NAME); sleep $(SLEEP_TIME)
-	$(INSMOD) $(XETHERNET3_PATH)/$(XETHERNET3_DRIVER_NAME)
+	#$(INSMOD) $(XETHERNET1_PATH)/$(XETHERNET1_DRIVER_NAME); sleep $(SLEEP_TIME)
+	#$(INSMOD) $(XETHERNET2_PATH)/$(XETHERNET2_DRIVER_NAME); sleep $(SLEEP_TIME)
+	#$(INSMOD) $(XETHERNET3_PATH)/$(XETHERNET3_DRIVER_NAME)
 endef
 
 define remove_performance_driver
@@ -142,9 +142,9 @@ endef
 
 define remove_ethernet_driver
 	echo Removing Ethernet Driver
-	$(RMMOD) $(XETHERNET3_DRIVER_NAME); sleep $(SLEEP_TIME)
-	$(RMMOD) $(XETHERNET2_DRIVER_NAME); sleep $(SLEEP_TIME)
-	$(RMMOD) $(XETHERNET1_DRIVER_NAME); sleep $(SLEEP_TIME)
+	#$(RMMOD) $(XETHERNET3_DRIVER_NAME); sleep $(SLEEP_TIME)
+	#$(RMMOD) $(XETHERNET2_DRIVER_NAME); sleep $(SLEEP_TIME)
+	#$(RMMOD) $(XETHERNET1_DRIVER_NAME); sleep $(SLEEP_TIME)
 	$(RMMOD) $(XETHERNET0_DRIVER_NAME); sleep $(SLEEP_TIME); $(RM) -f /dev/$(DMA_STATS_FILE)
 	$(RMMOD) $(DMA_DRIVER_NAME)
 endef
