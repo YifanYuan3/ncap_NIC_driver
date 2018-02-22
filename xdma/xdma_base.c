@@ -829,10 +829,6 @@ void EQPool(struct PktPool * pp)
 	pktPoolTail = pp;
 	spin_unlock_irqrestore(&PktPoolLock, flags);
 }
-//yifany3
-#define TH_BH_ISR 1
-//yifany3
-#ifdef TH_BH_ISR
 
 static void IntrBH(unsigned long unused)
 {
@@ -911,6 +907,7 @@ int IntrCheck(struct pci_dev * dev)
 	Dma_Engine * eptr;
 	int i, retval=XST_FAILURE;
 	static int count0=0, count1=0, count2=0, count3=0;
+	u32 user_irq_type;
 
 	lp = pci_get_drvdata(dev);
 	log_verbose(KERN_INFO "IntrCheck: device %x\n", (u32) dev);
@@ -923,6 +920,25 @@ int IntrCheck(struct pci_dev * dev)
 	//if(!(girqval & (DMA_INT_ACTIVE_MASK|DMA_INT_PENDING_MASK|DMA_USER_INT_ACTIVE_MASK)))
 	//if(!(girqval & (DMA_INT_ACTIVE_MASK|DMA_USER_INT_ACTIVE_MASK)))
 	//    return;
+	//first check if it's a user interrupt, then check its type, and do the power management accordingly.
+	if(girqval & (0x0001 << 5) == 1){
+		user_irq_type = Dma_mReadReg(base, REG_INTERRUPT_TYPE);
+		if(user_irq_type == 0xaabbcc11){
+			//intr_high
+		}
+		else if(user_irq_type == 0xaabbcc22){
+			//intr_low
+		}
+		else{
+			printk(KERN_INFO "wrong user interrupt!\n");
+		}
+	}
+
+
+
+
+
+
 
 	/* Now, check each S2C DMA engine (0 to 7) */
 	imask = (girqval & DMA_S2C_ENG_INT_VAL) >> 16;
@@ -1028,7 +1044,6 @@ static irqreturn_t DmaInterrupt(int irq, void *dev_id)
 		return IRQ_NONE;
 }
 
-#endif
 
 
 
