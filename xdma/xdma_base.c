@@ -906,7 +906,6 @@ int IntrCheck(struct pci_dev * dev)
 	#endif
 	Dma_Engine * eptr;
 	int i, retval=XST_FAILURE;
-	static int count0=0, count1=0, count2=0, count3=0;
 	u32 user_irq_type;
 
 	lp = pci_get_drvdata(dev);
@@ -972,8 +971,6 @@ int IntrCheck(struct pci_dev * dev)
 			}
 			spin_unlock(&IntrLock);
 
-			if(i==0) count0++;
-			else if(i==1) count1++;
 			retval = XST_SUCCESS;
 		}
 		else if(dirqval & DMA_ENG_INT_ACTIVE_MASK) log_normal("1");
