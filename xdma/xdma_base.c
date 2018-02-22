@@ -1009,8 +1009,6 @@ int IntrCheck(struct pci_dev * dev)
 			}
 			spin_unlock(&IntrLock);
 
-			if(i==32) count2++;
-			else if(i==33) count3++;
 			retval = XST_SUCCESS;
 		}
 		else if(dirqval & DMA_ENG_INT_ACTIVE_MASK) log_normal("~");
