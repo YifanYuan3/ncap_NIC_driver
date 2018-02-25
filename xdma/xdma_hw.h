@@ -97,6 +97,7 @@ extern "C" {
 #define REG_THRESHOLD_SAFEGUARD 0x941C   
 #define REG_AGGRESSIVE_MODE     0x9420 
 #define REG_INTERRUPT_TYPE      0x9428
+#define REG_NCAP_ENABLE         0x942C
 
 	/* These engine registers are applicable to both S2C and C2S channels. 
 	 * Register field mask and shift definitions are later in this file.
