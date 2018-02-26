@@ -936,6 +936,7 @@ int IntrCheck(struct pci_dev * dev)
 
 
 
+
 	/* Now, check each S2C DMA engine (0 to 7) */
 	imask = (girqval & DMA_S2C_ENG_INT_VAL) >> 16;
 	for(i=0; i<7; i++) 
