@@ -922,15 +922,12 @@ int IntrCheck(struct pci_dev * dev)
 	//first check if it's a user interrupt, then check its type, and do the power management accordingly.
 	if(girqval & (0x0001 << 5) == 1){
 		user_irq_type = Dma_mReadReg(base, REG_INTERRUPT_TYPE);
-		if(user_irq_type == 0xaabbcc11){
-			//intr_high
-		}
-		else if(user_irq_type == 0xaabbcc22){
+		if(user_irq_type == 0){
 			//intr_low
 		}
 		else{
-			printk(KERN_INFO "wrong user interrupt!\n");
-		}
+			//intr_high
+		} 
 	}
 
 
