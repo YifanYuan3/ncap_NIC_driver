@@ -889,6 +889,29 @@ u32 Acks(u32 dirqval)
 	return retval;
 }
 
+void example_control_ncap(struct pci_dev * dev, u32 data, u16 reg_addr)
+{
+	struct privData *lp;
+	#ifdef X86_64
+	u64 base;
+	#else
+	u32 base;
+	#endif
+
+
+	lp = pci_get_drvdata(dev);
+#ifdef X86_64
+	base = (lp->barInfo[0].baseVAddr);
+#else
+	base = (u32)(lp->barInfo[0].baseVAddr);
+#endif	
+
+	Dma_mWriteReg(base, reg_addr, data);
+
+	return;
+	
+
+}
 /* This function serves to handle the initial interrupt, as well as to
  * check again on pending interrupts, from the BH. If this is not done,
  * interrupts can stall.
