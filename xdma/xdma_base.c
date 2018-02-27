@@ -91,7 +91,7 @@
 #include <linux/mm.h>                   
 #include <linux/spinlock.h>             
 #include <linux/pagemap.h>              
-#include <asm/scatterlist.h>
+//#include <asm/scatterlist.h>
 
 #include <linux/delay.h>
 
