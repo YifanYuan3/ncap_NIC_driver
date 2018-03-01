@@ -55,7 +55,7 @@ always@(posedge clk)begin
         count_safeguard <= 0;
     end
     else begin 
-        if(timeout == 1 && rx_counter_rst == 0)begin
+        if(timeout == 1 )begin
             count_safeguard <= count_safeguard + 1;
         end
         else begin 
@@ -68,7 +68,7 @@ timer timer_inst(
     .clk(clk),
     .rst(rst),
     .interval(interval),
-    .timeout(timeout)
+    .timeout(timeout | rx_counter_rst)
 );
 
 
@@ -143,7 +143,7 @@ always@(*)begin
         IDLE: begin
             tx_counter_rst <= 0;
             interrupt_type <= INTR_HIGH;
-            if(rx_count > threshold_high_rx)begin
+            if(rx_count > threshold_high_rx )begin
                 interrupt <= 1;
                 next_state <= TEMP;
                 rx_counter_rst <= 1;
@@ -183,20 +183,19 @@ always@(*)begin
             //timer timeout
             if(timeout == 1)begin
                 next_state <= TEMP;
+                //stay at goto low, and count safeguard increment 1
+                rx_counter_rst <= 0;
+                tx_counter_rst <= 0;
+                interrupt <= (aggressive_mode == 1)? 0:1;
+            end
+            else begin
                 //go back to high perf
                 if(!(rx_count < threshold_low_rx && tx_count < threshold_high_tx) )begin 
                     rx_counter_rst <= 1;
                     tx_counter_rst <= 1;
                     interrupt <= 0;
+                    next_state <= TEMP;
                 end
-                //stay at goto low, and count safeguard increment 1
-                else begin   
-                    rx_counter_rst <= 0;
-                    tx_counter_rst <= 0;
-                    interrupt <= (aggressive_mode == 1)? 0:1;
-                end
-            end
-            else begin
                 // unsafe, go back to idle
                 if(count_safeguard > threshold_safeguard)begin
                     rx_counter_rst <= 1;
