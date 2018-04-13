@@ -96,8 +96,22 @@ extern "C" {
 #define REG_THRESHOLD_LOW_RX    0x9418      
 #define REG_THRESHOLD_SAFEGUARD 0x941C   
 #define REG_AGGRESSIVE_MODE     0x9420 
+#define REG_NCAP_STATE          0x9424 
 #define REG_INTERRUPT_TYPE      0x9428
 #define REG_NCAP_ENABLE         0x942C
+
+/*
+NCAP_STATE: 
+IDLE: 1
+HIGH_PERF: 2
+GOTO_LOW: 4
+other: undefined 
+
+no worry if you see a value of 8, that is a transient state and will only last 1 clock cycle.
+*/
+
+
+
 
 	/* These engine registers are applicable to both S2C and C2S channels. 
 	 * Register field mask and shift definitions are later in this file.

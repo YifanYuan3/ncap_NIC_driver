@@ -943,7 +943,7 @@ int IntrCheck(struct pci_dev * dev)
 	//if(!(girqval & (DMA_INT_ACTIVE_MASK|DMA_USER_INT_ACTIVE_MASK)))
 	//    return;
 	//first check if it's a user interrupt, then check its type, and do the power management accordingly.
-	if(girqval & (0x0001 << 5) == 1){
+	if(girqval & (0x0001 << 5) != 0){
 		user_irq_type = Dma_mReadReg(base, REG_INTERRUPT_TYPE);
 		if(user_irq_type == 0){
 			//intr_low

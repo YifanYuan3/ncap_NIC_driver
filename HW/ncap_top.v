@@ -22,7 +22,8 @@ module ncap_top(
     input rx_tready,
 
     output reg interrupt,
-    output reg interrupt_type
+    output reg interrupt_type,
+    output reg [3:0] state
 
 );
 
@@ -45,7 +46,6 @@ reg  [31:0] count_safeguard;
 reg tx_counter_rst;
 reg rx_counter_rst;
 
-reg [3:0] state;
 reg [3:0] next_state;
 reg [3:0] next_state_1;
 
@@ -68,13 +68,13 @@ timer timer_inst(
     .clk(clk),
     .rst(rst),
     .interval(interval),
-    .timeout(timeout | rx_counter_rst)
+    .timeout(timeout )
 );
 
 
 tx_counter tc_inst(
     .clk(clk),
-    .rst(rst | tx_counter_rst | timeout),
+    .rst(rst /*| tx_counter_rst*/ | timeout),
     .tx_count(tx_count),
     .tx_tvalid(tx_tvalid),
     .tx_tdata (tx_tdata),
@@ -85,7 +85,7 @@ tx_counter tc_inst(
 
 rx_counter rc_inst(
     .clk(clk),
-    .rst(rst | rx_counter_rst | timeout),
+    .rst(rst /*| rx_counter_rst */| timeout),
     .rx_count(rx_count),
     .rx_tvalid(rx_tvalid),
     .rx_tdata (rx_tdata),
@@ -118,7 +118,7 @@ always@(posedge clk)begin
                 next_state_1 <= GOTO_LOW;
             end
             GOTO_LOW:begin
-                if(rx_counter_rst == 1 && tx_counter_rst == 1)begin
+                if(rx_counter_rst == 1 )begin
                     if(interrupt == 1)begin
                         next_state_1 <= IDLE;
                     end
@@ -142,16 +142,15 @@ always@(*)begin
     case(state)
         IDLE: begin
             tx_counter_rst <= 0;
+            rx_counter_rst <= 0;
             interrupt_type <= INTR_HIGH;
             if(rx_count > threshold_high_rx )begin
                 interrupt <= 1;
                 next_state <= TEMP;
-                rx_counter_rst <= 1;
             end
             else begin
                 next_state <= IDLE;
                 interrupt <= 0;
-                rx_counter_rst <= 0;
             end
         end
 
