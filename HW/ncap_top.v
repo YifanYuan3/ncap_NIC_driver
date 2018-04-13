@@ -196,7 +196,7 @@ always@(*)begin
                     next_state <= TEMP;
                 end
                 // unsafe, go back to idle
-                if(count_safeguard > threshold_safeguard)begin
+                else if(count_safeguard > threshold_safeguard)begin
                     rx_counter_rst <= 1;
                     tx_counter_rst <= 1;
                     next_state <= TEMP;
