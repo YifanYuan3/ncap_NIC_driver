@@ -119,7 +119,7 @@ always@(posedge clk)begin
             end
             GOTO_LOW:begin
                 if(rx_counter_rst == 1 )begin
-                    if(interrupt == 1)begin
+                    if(interrupt == 1 && interrupt_type == INTR_LOW)begin
                         next_state_1 <= IDLE;
                     end
                     else begin
@@ -178,7 +178,6 @@ always@(*)begin
         end
 
         GOTO_LOW: begin
-            interrupt_type <= INTR_LOW;
             //timer timeout
             if(timeout == 1)begin
                 next_state <= TEMP;
@@ -186,14 +185,16 @@ always@(*)begin
                 rx_counter_rst <= 0;
                 tx_counter_rst <= 0;
                 interrupt <= (aggressive_mode == 1)? 0:1;
+                interrupt_type <= INTR_LOW;
             end
             else begin
                 //go back to high perf
                 if(!(rx_count < threshold_low_rx && tx_count < threshold_high_tx) )begin 
                     rx_counter_rst <= 1;
                     tx_counter_rst <= 1;
-                    interrupt <= 0;
+                    interrupt <= 1;
                     next_state <= TEMP;
+                    interrupt_type <= INTR_HIGH;
                 end
                 // unsafe, go back to idle
                 else if(count_safeguard > threshold_safeguard)begin
@@ -201,6 +202,7 @@ always@(*)begin
                     tx_counter_rst <= 1;
                     next_state <= TEMP;
                     interrupt <= 1;
+                    interrupt_type <= INTR_LOW;
                 end
                 //stay here
                 else begin
@@ -208,6 +210,7 @@ always@(*)begin
                     rx_counter_rst <= 0;
                     tx_counter_rst <= 0;
                     interrupt <= 0;
+                    interrupt_type <= INTR_LOW;
                 end
             end
         end
