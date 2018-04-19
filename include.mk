@@ -3,7 +3,7 @@ ifndef DRIVER_MODE
 export DRIVER_MODE=PERFORMANCE
 endif
 
-export KDIR= /lib/modules/$(shell uname -r)/build
+export KDIR='pwd'/linux-4.4
 export XDMA_PATH=$(ROOTDIR)/xdma
 export XRAWDATA0_PATH=$(ROOTDIR)/xrawdata0
 export XRAWDATA1_PATH=$(ROOTDIR)/xrawdata1

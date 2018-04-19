@@ -1,49 +1,49 @@
 /*******************************************************************************
  ** © Copyright 2012 - 2013 Xilinx, Inc. All rights reserved.
- ** This file contains confidential and proprietary information of Xilinx, Inc. and 
+ ** This file contains confidential and proprietary information of Xilinx, Inc. and
  ** is protected under U.S. and international copyright and other intellectual property laws.
  *******************************************************************************
- **   ____  ____ 
- **  /   /\/   / 
- ** /___/  \  /   Vendor: Xilinx 
- ** \   \   \/    
+ **   ____  ____
+ **  /   /\/   /
+ ** /___/  \  /   Vendor: Xilinx
+ ** \   \   \/
  **  \   \
- **  /   /          
+ **  /   /
  ** /___/    \
  ** \   \  /  \   Virtex-7 FPGA XT Connectivity Targeted Reference Design
  **  \___\/\___\
- ** 
+ **
  **  Device: xc7v690t
  **  Version: 1.0
  **  Reference: UG962
- **     
+ **
  *******************************************************************************
  **
- **  Disclaimer: 
+ **  Disclaimer:
  **
- **    This disclaimer is not a license and does not grant any rights to the materials 
- **    distributed herewith. Except as otherwise provided in a valid license issued to you 
- **    by Xilinx, and to the maximum extent permitted by applicable law: 
- **    (1) THESE MATERIALS ARE MADE AVAILABLE "AS IS" AND WITH ALL FAULTS, 
- **    AND XILINX HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS, EXPRESS, IMPLIED, OR STATUTORY, 
- **    INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, NON-INFRINGEMENT, OR 
- **    FITNESS FOR ANY PARTICULAR PURPOSE; and (2) Xilinx shall not be liable (whether in contract 
- **    or tort, including negligence, or under any other theory of liability) for any loss or damage 
- **    of any kind or nature related to, arising under or in connection with these materials, 
- **    including for any direct, or any indirect, special, incidental, or consequential loss 
- **    or damage (including loss of data, profits, goodwill, or any type of loss or damage suffered 
- **    as a result of any action brought by a third party) even if such damage or loss was 
+ **    This disclaimer is not a license and does not grant any rights to the materials
+ **    distributed herewith. Except as otherwise provided in a valid license issued to you
+ **    by Xilinx, and to the maximum extent permitted by applicable law:
+ **    (1) THESE MATERIALS ARE MADE AVAILABLE "AS IS" AND WITH ALL FAULTS,
+ **    AND XILINX HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS, EXPRESS, IMPLIED, OR STATUTORY,
+ **    INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, NON-INFRINGEMENT, OR
+ **    FITNESS FOR ANY PARTICULAR PURPOSE; and (2) Xilinx shall not be liable (whether in contract
+ **    or tort, including negligence, or under any other theory of liability) for any loss or damage
+ **    of any kind or nature related to, arising under or in connection with these materials,
+ **    including for any direct, or any indirect, special, incidental, or consequential loss
+ **    or damage (including loss of data, profits, goodwill, or any type of loss or damage suffered
+ **    as a result of any action brought by a third party) even if such damage or loss was
  **    reasonably foreseeable or Xilinx had been advised of the possibility of the same.
 
 
  **  Critical Applications:
  **
- **    Xilinx products are not designed or intended to be fail-safe, or for use in any application 
- **    requiring fail-safe performance, such as life-support or safety devices or systems, 
+ **    Xilinx products are not designed or intended to be fail-safe, or for use in any application
+ **    requiring fail-safe performance, such as life-support or safety devices or systems,
  **    Class III medical devices, nuclear facilities, applications related to the deployment of airbags,
- **    or any other applications that could lead to death, personal injury, or severe property or 
- **    environmental damage (individually and collectively, "Critical Applications"). Customer assumes 
- **    the sole risk and liability of any use of Xilinx products in Critical Applications, subject only 
+ **    or any other applications that could lead to death, personal injury, or severe property or
+ **    environmental damage (individually and collectively, "Critical Applications"). Customer assumes
+ **    the sole risk and liability of any use of Xilinx products in Critical Applications, subject only
  **    to applicable laws and regulations governing limitations on product liability.
 
  **  THIS COPYRIGHT NOTICE AND DISCLAIMER MUST BE RETAINED AS PART OF THIS FILE AT ALL TIMES.
@@ -54,16 +54,16 @@
  *
  * @file xdma_user.h
  *
- * This file contains the data required for the interface between the 
+ * This file contains the data required for the interface between the
  * base DMA driver (xdma) and the application-specific drivers, for example,
  *
- * This interface has been architected in order to make it possible to 
+ * This interface has been architected in order to make it possible to
  * easily substitute the application-specific drivers that come with this
  * TRD with other application-specific drivers, without re-writing the
  * common DMA-handling functionality.
  *
  * Some xdma functions are called directly by the application-specific driver
- * and some are callbacks registered by the application-specific driver, 
+ * and some are callbacks registered by the application-specific driver,
  * and are called by xdma.
  *
  * <pre>
@@ -72,7 +72,7 @@
  *                 ---------------------------------------------->
  *                             Driver De-registration
  *                 ---------------------------------------------->
- *                           Transmit Block/Packet Data 
+ *                           Transmit Block/Packet Data
  *                 ---------------------------------------------->
  *                            Complete Initialization
  *                <----------------------------------------------
@@ -82,7 +82,7 @@
  *                <----------------------------------------------
  *                             Get Packet Buffer for RX
  *                <----------------------------------------------
- *                               Return Packet Buffer 
+ *                               Return Packet Buffer
  *                <----------------------------------------------
  *                                    Set State
  *                <----------------------------------------------
@@ -91,7 +91,7 @@
  * </pre>
  * <b> Driver Registration/De-registration </b>
  *
- * The application-specific drivers are dependent on the DMA driver and 
+ * The application-specific drivers are dependent on the DMA driver and
  * can be inserted as Linux kernel modules only after xdma has been loaded.
  *
  * To register itself with xdma, the application-specific driver does the
@@ -100,14 +100,14 @@
  * normally uses -
  * <pre> Handle = DmaRegister(int Engine, int Bar, UserPtrs * uptr, int PktSize); </pre>
  * The application-specific driver requires to know the kernel logical
- * address of the desired BAR in order to do any device-specific 
+ * address of the desired BAR in order to do any device-specific
  * initializations that may be required. For example, the xgbeth driver
  * requires to program the TEMAC and PHY registers, while the xaui driver
  * requires to control the test configuration.
  *
- * Before returning to the caller, DmaRegister() will invoke the function 
- * callback registered to complete the initialization process, while 
- * specifying the BAR's logical address, and a private data pointer that 
+ * Before returning to the caller, DmaRegister() will invoke the function
+ * callback registered to complete the initialization process, while
+ * specifying the BAR's logical address, and a private data pointer that
  * was passed to it during registration. privData can be used by the user
  * driver to differentiate between multiple DmaRegister() invocations -
  * <pre> (uptr->UserInit)(BARbase, privData); </pre>
@@ -138,8 +138,8 @@
 * descriptor (BD) rings, one for transmission and one for reception. The
 * TX BD ring will be consumed only when there is data for transmission.
 * The RX BD ring, on the other hand, will be entirely submitted for DMA
-* in order to maximize performance. 
-* 
+* in order to maximize performance.
+*
 * <b> Data Transmission </b>
 *
 * When the application-specific driver wants to transmit a data block or
@@ -175,17 +175,17 @@
 * <pre> (uptr->UserIntr)(Handle, privData); </pre>
 * <b><i> Note: This callback is not being invoked by xdma v1.00, and will be
 * added in the future. </i></b>
-* 
+*
 * <b> Configuration, Status and Statistics </b>
 *
 * The Xilinx Performance Monitor GUI (xpmon) can be used to initiate a
-* data transfer test and measure DMA payload and PCIe link performance. 
+* data transfer test and measure DMA payload and PCIe link performance.
 * xdma invokes the following, while specifying whether loopback is enabled
 * or not, and the minimum/maximum bounds of packet sizes -
 * <pre> (uptr->UserSetState)(Handle, UserState * ustate, privData); </pre>
-* The same callback is used to start a test, and to stop a test. 
-* 
-* xdma invokes the following, in order to get current state of the 
+* The same callback is used to start a test, and to stop a test.
+*
+* xdma invokes the following, in order to get current state of the
 * application-specific driver -
 * <pre> (uptr->UserGetState)(Handle, UserState * ustate, privData); </pre>
 * Information regarding current test state, link state, total number of
@@ -211,10 +211,14 @@ extern "C" {
 #include <xpmon_be.h>
 #include <linux/ethtool.h>
 #include <linux/delay.h>	/* for mdelay() */
-#if 0 
+#if 0
 #include <linux/pagemap.h>
 #include <linux/mm.h>
 #endif
+
+#define SET_ETHTOOL_OPS(netdev,ops) \
+    ((netdev)->ethtool_ops = (ops))
+
 
 
 	/************************** Constant Definitions *****************************/
@@ -232,7 +236,7 @@ extern "C" {
 	/*@}*/
 
 	/** @name Packet information set/read by the user drivers.
-	 *  These flags match with the status reported by DMA. Additional flags 
+	 *  These flags match with the status reported by DMA. Additional flags
 	 *  should be assigned from available bits.
 	 *  @{
 	 */
@@ -271,7 +275,7 @@ extern "C" {
 
 	/**************************** Type Definitions *******************************/
 
-	/** Packet information passed between DMA and application-specific 
+	/** Packet information passed between DMA and application-specific
 	 *  drivers while transmitting and receiving data.
 	 *  A PktBuf array can be used to pass multiple packets between user
 	 *  and DMA drivers. It includes the following information -
@@ -284,10 +288,10 @@ extern "C" {
 	 *  - When the user submits a packet for DMA, the flags can be a combination
 	 *    of PKT_SOP, PKT_EOP and PKT_ALL. PKT_ALL indicates to the DMA driver
 	 *    that all of the packets in the submitted array must be queued for DMA.
-	 *    This will usually be done when the queued packets are fragments of a 
+	 *    This will usually be done when the queued packets are fragments of a
 	 *    larger user packet.
 	 *  - When the DMA driver returns a packet to the user driver, the flags can
-	 *    be a combination of PKT_SOP, PKT_EOP, PKT_ERROR and PKT_UNUSED. 
+	 *    be a combination of PKT_SOP, PKT_EOP, PKT_ERROR and PKT_UNUSED.
 	 *    PKT_UNUSED indicates that the packet buffer is being returned unused
 	 *    and does not contain valid data. This is usually done when the drivers
 	 *    are being unloaded and unregistered, and therefore, packets have been
@@ -298,15 +302,15 @@ extern "C" {
 		unsigned char * bufInfo;    /**< Per-packet identifier */
 		unsigned int size;          /**< Size of packet buffer */
 		unsigned int flags;         /**< Flags associated with packet */
-		unsigned long long userInfo;/**< User info associated with packet */ 
+		unsigned long long userInfo;/**< User info associated with packet */
 		unsigned char * pageAddr;   /**< User page address associated with buffer */
 		unsigned int pageOffset;    /**< User Page offset associated with page address */
 	} PktBuf;
 
-	/** User State Information passed between DMA and application-specific 
+	/** User State Information passed between DMA and application-specific
 	 *  drivers while changing configuration, and reading state/statistics.
 	 *  - LinkState can be LINK_UP or LINK_DOWN
-	 *  - When DMA driver sets the test state in the user driver, TestMode can 
+	 *  - When DMA driver sets the test state in the user driver, TestMode can
 	 *    be a combination of TEST_STOP, TEST_START and ENABLE_LOOPBACK.
 	 *  - When DMA driver gets the test state from the user driver, TestMode can
 	 *    be a combination of TEST_IN_PROGRESS and ENABLE_LOOPBACK.
@@ -320,8 +324,8 @@ extern "C" {
 		unsigned int TestMode;      /**< Test Mode */
 	} UserState;
 
-	/** User instance function callbacks. Not all callbacks need to be 
-	 *  implemented. 
+	/** User instance function callbacks. Not all callbacks need to be
+	 *  implemented.
 	 */
 #ifdef X86_64
 
@@ -356,7 +360,7 @@ extern "C" {
 #endif
 
 	} UserPtrs;
-#else	 
+#else
 	typedef struct {
 		unsigned int privData;      /**< User-specified private data */
 		unsigned int versionReg;    /**< User-specific version info register */

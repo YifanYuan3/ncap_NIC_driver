@@ -7,11 +7,11 @@ STATSFILE="xdma_stat"
 
 if [ -d /sys/module/$DMA_MODULE_NAME ]; then
 	if [ -d /sys/module/$RAWMODULE ]; then
-		cd driver && sudo make DRIVER_MODE=RAWETHERNET remove
+		sudo make DRIVER_MODE=RAWETHERNET remove
 	elif [ -d /sys/module/$RAWMODULE1 ]; then
-		cd driver && sudo make remove
+		sudo make remove
 	elif [ -d /sys/module/$ETHERAPP ]; then
-		cd driver && sudo make DRIVER_MODE=ETHERNETAPP remove
+		sudo make DRIVER_MODE=ETHERNETAPP remove
 	else
 		sudo rmmod $DMA_MODULE_NAME
 	fi

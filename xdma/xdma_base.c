@@ -1,49 +1,49 @@
 /*******************************************************************************
  ** � Copyright 2012 - 2013 Xilinx, Inc. All rights reserved.
- ** This file contains confidential and proprietary information of Xilinx, Inc. and 
+ ** This file contains confidential and proprietary information of Xilinx, Inc. and
  ** is protected under U.S. and international copyright and other intellectual property laws.
  *******************************************************************************
- **   ____  ____ 
- **  /   /\/   / 
- ** /___/  \  /   Vendor: Xilinx 
- ** \   \   \/    
+ **   ____  ____
+ **  /   /\/   /
+ ** /___/  \  /   Vendor: Xilinx
+ ** \   \   \/
  **  \   \
- **  /   /          
+ **  /   /
  ** /___/    \
  ** \   \  /  \   Virtex-7 FPGA XT Connectivity Targeted Reference Design
  **  \___\/\___\
- ** 
+ **
  **  Device: xc7v690t
  **  Version: 1.0
  **  Reference: UG962
- **     
+ **
  *******************************************************************************
  **
- **  Disclaimer: 
+ **  Disclaimer:
  **
- **    This disclaimer is not a license and does not grant any rights to the materials 
- **    distributed herewith. Except as otherwise provided in a valid license issued to you 
- **    by Xilinx, and to the maximum extent permitted by applicable law: 
- **    (1) THESE MATERIALS ARE MADE AVAILABLE "AS IS" AND WITH ALL FAULTS, 
- **    AND XILINX HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS, EXPRESS, IMPLIED, OR STATUTORY, 
- **    INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, NON-INFRINGEMENT, OR 
- **    FITNESS FOR ANY PARTICULAR PURPOSE; and (2) Xilinx shall not be liable (whether in contract 
- **    or tort, including negligence, or under any other theory of liability) for any loss or damage 
- **    of any kind or nature related to, arising under or in connection with these materials, 
- **    including for any direct, or any indirect, special, incidental, or consequential loss 
- **    or damage (including loss of data, profits, goodwill, or any type of loss or damage suffered 
- **    as a result of any action brought by a third party) even if such damage or loss was 
+ **    This disclaimer is not a license and does not grant any rights to the materials
+ **    distributed herewith. Except as otherwise provided in a valid license issued to you
+ **    by Xilinx, and to the maximum extent permitted by applicable law:
+ **    (1) THESE MATERIALS ARE MADE AVAILABLE "AS IS" AND WITH ALL FAULTS,
+ **    AND XILINX HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS, EXPRESS, IMPLIED, OR STATUTORY,
+ **    INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, NON-INFRINGEMENT, OR
+ **    FITNESS FOR ANY PARTICULAR PURPOSE; and (2) Xilinx shall not be liable (whether in contract
+ **    or tort, including negligence, or under any other theory of liability) for any loss or damage
+ **    of any kind or nature related to, arising under or in connection with these materials,
+ **    including for any direct, or any indirect, special, incidental, or consequential loss
+ **    or damage (including loss of data, profits, goodwill, or any type of loss or damage suffered
+ **    as a result of any action brought by a third party) even if such damage or loss was
  **    reasonably foreseeable or Xilinx had been advised of the possibility of the same.
 
 
  **  Critical Applications:
  **
- **    Xilinx products are not designed or intended to be fail-safe, or for use in any application 
- **    requiring fail-safe performance, such as life-support or safety devices or systems, 
+ **    Xilinx products are not designed or intended to be fail-safe, or for use in any application
+ **    requiring fail-safe performance, such as life-support or safety devices or systems,
  **    Class III medical devices, nuclear facilities, applications related to the deployment of airbags,
- **    or any other applications that could lead to death, personal injury, or severe property or 
- **    environmental damage (individually and collectively, "Critical Applications"). Customer assumes 
- **    the sole risk and liability of any use of Xilinx products in Critical Applications, subject only 
+ **    or any other applications that could lead to death, personal injury, or severe property or
+ **    environmental damage (individually and collectively, "Critical Applications"). Customer assumes
+ **    the sole risk and liability of any use of Xilinx products in Critical Applications, subject only
  **    to applicable laws and regulations governing limitations on product liability.
 
  **  THIS COPYRIGHT NOTICE AND DISCLAIMER MUST BE RETAINED AS PART OF THIS FILE AT ALL TIMES.
@@ -54,9 +54,9 @@
  *
  * @file xdma_base.c
  *
- * This is the Linux base driver for the DMA engine core. It provides 
- * multi-channel DMA capability with the help of the Northwest Logic 
- * DMA engine. 
+ * This is the Linux base driver for the DMA engine core. It provides
+ * multi-channel DMA capability with the help of the Northwest Logic
+ * DMA engine.
  *
  * Author: Xilinx, Inc.
  *
@@ -86,11 +86,11 @@
 #include <linux/version.h>
 #include <linux/ethtool.h>
 #ifdef PM_SUPPORT
-#include <linux/pm.h>                 
+#include <linux/pm.h>
 #endif
-#include <linux/mm.h>                   
-#include <linux/spinlock.h>             
-#include <linux/pagemap.h>              
+#include <linux/mm.h>
+#include <linux/spinlock.h>
+#include <linux/pagemap.h>
 //#include <asm/scatterlist.h>
 
 #include <linux/delay.h>
@@ -104,10 +104,15 @@
 #include "xdma_bdring.h"
 #include "xdma_user.h"
 
+//gus
+#include <linux/cpufreq.h>
+#include <linux/cpuidle.h>
+
+
 
 /************************** Constant Definitions *****************************/
 
-/** @name Macros for PCI probing 
+/** @name Macros for PCI probing
  * @{
  */
 #define PCI_VENDOR_ID_DMA   0x10EE      /**< Vendor ID - Xilinx */
@@ -128,13 +133,13 @@ MODULE_LICENSE("GPL");
 /** PCI device structure which probes for targeted design */
 static struct pci_device_id ids[] = {
 	{ PCI_VENDOR_ID_DMA,    PCI_DEVICE_ID_DMA,
-		PCI_ANY_ID,               PCI_ANY_ID, 
+		PCI_ANY_ID,               PCI_ANY_ID,
 		0,            0,          0UL },
 	{ }     /* terminate list with empty entry */
 };
 
 /**
- * Macro to export pci_device_id to user space to allow hot plug and 
+ * Macro to export pci_device_id to user space to allow hot plug and
  * module loading system to know what module works with which hardware device
  */
 MODULE_DEVICE_TABLE(pci, ids);
@@ -152,7 +157,7 @@ MODULE_DEVICE_TABLE(pci, ids);
  * BD Space needed is (DMA_BD_CNT*sizeof(Dma_Bd)).
  */
 
-#define DMA_BD_CNT 1999     
+#define DMA_BD_CNT 1999
 
 /* Size of packet pool */
 #define MAX_POOL    10
@@ -170,7 +175,7 @@ MODULE_DEVICE_TABLE(pci, ids);
 #define MInitFCNPH               0x9028 /* Initial NPH Credits for Downstream Port */
 #define MInitFCPD                0x902c /* Initial PD Credits for Downstream Port */
 #define MInitFCPH                0x9030 /* Initial PH Credits for Downstream Port */
-#define PCIE_DESIGN_VERSION      0x9000 
+#define PCIE_DESIGN_VERSION      0x9000
 
 #define PCIE_CAP_REG      0x9034
 #ifdef PM_SUPPORT
@@ -191,6 +196,47 @@ MODULE_DEVICE_TABLE(pci, ids);
 #define PVTMON_RSVD       0x906C
 #define DIE_TEMP          0x9070
 #endif
+
+//gus
+#define FCONS                   5
+#define TIMER_INTERVAL          100000000 / 4 /*10ms*/
+#define THRESHOLD_HIGH_RX       1000
+#define THRESHOLD_HIGH_TX       1000
+#define THRESHOLD_LOW_RX        999
+#define THRESHOLD_SAFEGUARD     4
+#define AGGRESSIVE_MODE         0            /*disable*/
+#define NCAP_ENABLE             0            /*enable*/
+
+/*
+unsigned int fcons = FCONS;
+unsigned int time_interval = TIMER_INTERVAL;
+unsigned int threshold_high_rx = THRESHOLD_HIGH_RX;
+unsigned int threshold_high_tx = THRESHOLD_HIGH_TX;
+unsigned int threshold_low_rx = THRESHOLD_LOW_RX;
+unsigned int threshold_safeguard = THRESHOLD_SAFEGUARD;
+unsigned int aggressive_mode = AGGRESSIVE_MODE;
+unsigned int ncap_enable = NCAP_ENABLE;
+
+unsigned int ncap_set(const char *val, const struct kernel_param *kp)
+{
+    unsigned int value = kp->arg;
+    Dma_mWriteReg(base, REG_TIMER_INTERVAL,value);
+    return 0;
+}
+
+
+static struct kernel_param_ops ncap_ops =
+{
+    .set = &ncap_set,
+    .get = &param_get_ushort,
+}
+module_param_cb("FCONS",
+        &ncap_ops,
+        &fcons,
+        S_IRUGO |S_IWUSR
+        );
+        */
+
 
 /************************** Variable Names ***********************************/
 /** Pool of packet arrays to use while processing packets */
@@ -264,13 +310,24 @@ static void PutUnusedPkts(Dma_Engine * eptr, PktBuf * pbuf, int numpkts);
 
 static void DmaSetupRecvBuffers(struct pci_dev *, Dma_Engine *);
 
-/* The callback function for completed frames sent in SGDMA mode. 
+/* The callback function for completed frames sent in SGDMA mode.
  * In the interrupt-mode, these functions are scheduled as bottom-halves.
  * In the polled-mode, these functions are invoked as functions.
  */
 static void PktHandler(int eng, Dma_Engine * eptr);
 
 static void poll_routine(unsigned long __opaque);
+
+//gus
+struct cpufreq_policy * cpufreq_policies[32];
+unsigned int freq_table[FCONS] = {2400000, 2100000, 1800000 ,1500000, 1200000};
+unsigned int inc_flag = 0;
+unsigned int dec_flag = 0;
+unsigned char ncap_on_flag=0;
+int incFreqToMax(void);
+int decFreqToNext(void);
+int initPolicy(void);
+
 
 #ifdef TH_BH_ISR
 unsigned long long PendingMask = 0x0LL;
@@ -295,7 +352,7 @@ static void ReadConfig(struct pci_dev *);
 #ifdef PM_SUPPORT
 /************************************************************
  * Power Management support added
- *  
+ *
  * SYSTEM POWER STATES: suspend, resume, hibernate, restore
  * Suspend:   prepare -> suspend -> suspend_noirq
  * Resume:    resume_noirq -> resume -> complete
@@ -350,7 +407,7 @@ static int xdma_pm_suspend(struct device *dev)
 	// I. get the TX and RX engine pointers separate.
 
 	log_verbose(KERN_ERR "PM.... step1: get all tx and rx engines to be down\n");
-	for(i=0,t=0,r=0; i<MAX_DMA_ENGINES; i++) 
+	for(i=0,t=0,r=0; i<MAX_DMA_ENGINES; i++)
 	{
 		eptr = &(lp->Dma[i]);
 		if(eptr->EngineState != USER_ASSIGNED)
@@ -378,7 +435,7 @@ static int xdma_pm_suspend(struct device *dev)
 	//////////////////////////////////////////////////
 	// II.  Stop TX on netif; RX on MAC
 
-	for(i=0; i<MAX_DMA_ENGINES; i++) 
+	for(i=0; i<MAX_DMA_ENGINES; i++)
 	{
 		eptr = &(lp->Dma[i]);
 		if(eptr->EngineState != USER_ASSIGNED)
@@ -398,12 +455,12 @@ static int xdma_pm_suspend(struct device *dev)
 		}
 	}
 	// sleep a while
-	msleep(1000); 
+	msleep(1000);
 
 	////////////////////////////////////////////////
 	// III. Check for TX BDs are done.
 
-	for(i=0; txeptr[i] != NULL; i++) 
+	for(i=0; txeptr[i] != NULL; i++)
 	{
 		eptr = txeptr[i];
 		uptr = &(eptr->user);
@@ -418,7 +475,7 @@ static int xdma_pm_suspend(struct device *dev)
 		j=0;
 		do {
 			free_bd_count = Dma_mBdRingGetFreeCnt(rptr);
-			log_verbose(KERN_ERR "%d: txeng free_bd_count=%d  DMA_BD_CNT=%d\n", 
+			log_verbose(KERN_ERR "%d: txeng free_bd_count=%d  DMA_BD_CNT=%d\n",
 					teng[i], free_bd_count, DMA_BD_CNT);
 			msleep(3);
 		} while((free_bd_count+2) < (DMA_BD_CNT) );
@@ -427,8 +484,8 @@ static int xdma_pm_suspend(struct device *dev)
 	////////////////////////////////////////////////
 	// IV. Check for RX BDs are done.
 
-	for(i=0; rxeptr[i] != NULL; i++) 
-	{ 
+	for(i=0; rxeptr[i] != NULL; i++)
+	{
 		eptr = rxeptr[i];
 		if(eptr->EngineState != USER_ASSIGNED)
 			continue;
@@ -446,16 +503,16 @@ static int xdma_pm_suspend(struct device *dev)
 		j=0;
 		do {
 			free_bd_count = Dma_mBdRingGetFreeCnt(rptr);
-			log_verbose(KERN_ERR "%d: rxeng free_bd_count=%d  DMA_BD_CNT=%d\n", 
+			log_verbose(KERN_ERR "%d: rxeng free_bd_count=%d  DMA_BD_CNT=%d\n",
 					reng[i], free_bd_count, DMA_BD_CNT);
 			msleep(100);
 		} while(free_bd_count > 2);
 	}
-	msleep(2); 
+	msleep(2);
 
 	// free the descriptors as well.
-	for(i=0; i<MAX_DMA_ENGINES; i++) 
-	{ 
+	for(i=0; i<MAX_DMA_ENGINES; i++)
+	{
 		eptr = &(lp->Dma[i]);
 		if(eptr->EngineState != USER_ASSIGNED)
 			continue;
@@ -474,7 +531,7 @@ static int xdma_pm_suspend(struct device *dev)
 	///////////////////////////////////////////////////////////////
 	// V.  Stop TX on MAC/PHY; RX on netif; set PHY in PowerDOWN
 
-	for(i=0; i<MAX_DMA_ENGINES; i++) 
+	for(i=0; i<MAX_DMA_ENGINES; i++)
 	{
 		eptr = &(lp->Dma[i]);
 		if(eptr->EngineState != USER_ASSIGNED)
@@ -512,12 +569,12 @@ static int xdma_pm_suspend(struct device *dev)
 	base = (dmaData->barInfo[0].baseVAddr);
 #else
 	base = (u32)(dmaData->barInfo[0].baseVAddr);
-#endif	
+#endif
 	Dma_mIntDisable(base);
 	/* Disable MSI and interrupts */
 	free_irq(pdev->irq, pdev);
 	if(MSIEnabled) pci_disable_msi(pdev);
-	girqval = Dma_mReadReg(base, REG_DMA_CTRL_STATUS); 
+	girqval = Dma_mReadReg(base, REG_DMA_CTRL_STATUS);
 	log_verbose("While disabling interrupts, got %x\n", girqval);
 #endif
 
@@ -526,7 +583,7 @@ static int xdma_pm_suspend(struct device *dev)
 
 	/* Reset DMA - this includes disabling interrupts and DMA. */
 	log_verbose(KERN_ERR "PM.... doing DMA, BD reset.\n");
-	for(i=0; i<MAX_DMA_ENGINES; i++) 
+	for(i=0; i<MAX_DMA_ENGINES; i++)
 	{
 		eptr = &(lp->Dma[i]);
 
@@ -560,7 +617,7 @@ static int xdma_pm_resume(struct device *dev)
 	int pciRet;
 #ifdef X86_64
 	u64 barbase;
-#else	
+#else
 	u32 barbase;
 #endif
 	log_verbose(KERN_ERR "PM.... begin: xdma_pm_resume\n");
@@ -601,7 +658,7 @@ static int xdma_pm_resume(struct device *dev)
 	////////////////////////////////////////////////////
 	// V. invoke App Driver's resume() hook
 
-	for(i=0; i<MAX_DMA_ENGINES; i++) 
+	for(i=0; i<MAX_DMA_ENGINES; i++)
 	{
 		eptr = &(lp->Dma[i]);
 		if(eptr->EngineState != USER_ASSIGNED)
@@ -611,12 +668,12 @@ static int xdma_pm_resume(struct device *dev)
 		if(!((lp->engineMask) & (1LL << i)))
 			continue;
 #ifdef X86_64
-		barbase = (dmaData->barInfo[0].baseVAddr);  
+		barbase = (dmaData->barInfo[0].baseVAddr);
 #else
-		barbase = (u32)(dmaData->barInfo[0].baseVAddr);    
-#endif		
+		barbase = (u32)(dmaData->barInfo[0].baseVAddr);
+#endif
 		uptr->versionReg = (u32)(dmaData->barInfo[0].baseVAddr) +PCIE_DESIGN_VERSION;
-		if(uptr->UserResume) {    
+		if(uptr->UserResume) {
 			log_verbose(KERN_ERR ".... invoke UserInit with barbase 0x%x\n", barbase);
 			(uptr->UserInit)(barbase, uptr->privData);
 		}
@@ -795,9 +852,9 @@ static struct pci_driver xdma_driver = {
 	.probe = xdma_probe,
 	.remove = xdma_remove,
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
-	.pm        = PM_OPS,      
+	.pm        = PM_OPS,
 #else
-	.driver.pm = PM_OPS, 
+	.driver.pm = PM_OPS,
 #endif
 };
 
@@ -841,6 +898,17 @@ static void IntrBH(unsigned long unused)
 	pdev = dmaData->pdev;
 	lp = pci_get_drvdata(pdev);
 
+    if(inc_flag)
+    {
+        inc_flag = 0;
+        incFreqToMax();
+    }
+    else if(dec_flag)
+    {
+        dec_flag = 0;
+        decFreqToNext();
+    }
+
 	log_verbose("IntrBH with PendingMask %llx\n", PendingMask);
 
 	for(i=0; PendingMask && i<MAX_DMA_ENGINES; i++)
@@ -857,7 +925,7 @@ static void IntrBH(unsigned long unused)
 
 		eptr = &(lp->Dma[i]);
 		if(eptr->EngineState != USER_ASSIGNED)      // Corner case handling
-			continue;                               
+			continue;
 
 		PktHandler(i, eptr);
 
@@ -904,12 +972,12 @@ void example_control_ncap(struct pci_dev * dev, u32 data, u16 reg_addr)
 	base = (lp->barInfo[0].baseVAddr);
 #else
 	base = (u32)(lp->barInfo[0].baseVAddr);
-#endif	
+#endif
 
 	Dma_mWriteReg(base, reg_addr, data);
 
 	return;
-	
+
 
 }
 /* This function serves to handle the initial interrupt, as well as to
@@ -930,6 +998,7 @@ int IntrCheck(struct pci_dev * dev)
 	Dma_Engine * eptr;
 	int i, retval=XST_FAILURE;
 	u32 user_irq_type;
+    u32 state;
 
 	lp = pci_get_drvdata(dev);
 	log_verbose(KERN_INFO "IntrCheck: device %x\n", (u32) dev);
@@ -937,32 +1006,34 @@ int IntrCheck(struct pci_dev * dev)
 	base = (lp->barInfo[0].baseVAddr);
 #else
 	base = (u32)(lp->barInfo[0].baseVAddr);
-#endif	
-	girqval = Dma_mReadReg(base, REG_DMA_CTRL_STATUS); 
+#endif
+	girqval = Dma_mReadReg(base, REG_DMA_CTRL_STATUS);
 	//if(!(girqval & (DMA_INT_ACTIVE_MASK|DMA_INT_PENDING_MASK|DMA_USER_INT_ACTIVE_MASK)))
 	//if(!(girqval & (DMA_INT_ACTIVE_MASK|DMA_USER_INT_ACTIVE_MASK)))
 	//    return;
 	//first check if it's a user interrupt, then check its type, and do the power management accordingly.
+
+    state = Dma_mReadReg(base,REG_NCAP_STATE);
+    printk(KERN_INFO "ncap_state %d !!  \n",state);
 	if(girqval & (0x0001 << 5) != 0){
+        //gus
 		user_irq_type = Dma_mReadReg(base, REG_INTERRUPT_TYPE);
 		if(user_irq_type == 0){
 			//intr_low
+            printk(KERN_INFO "--------get decrease interrupt  \n");
+            dec_flag = 1;
 		}
 		else{
 			//intr_high
-		} 
+            printk(KERN_INFO "++++++++get increase interrupt  \n");
+            inc_flag = 1;
+      	}
 	}
-
-
-
-
-
-
 
 
 	/* Now, check each S2C DMA engine (0 to 7) */
 	imask = (girqval & DMA_S2C_ENG_INT_VAL) >> 16;
-	for(i=0; i<7; i++) 
+	for(i=0; i<7; i++)
 	{
 		if(!imask) break;
 		if(!(imask & (0x01<<i))) continue;
@@ -978,7 +1049,7 @@ int IntrCheck(struct pci_dev * dev)
 		/* Check whether interrupt is enabled, otherwise it could be a
 		 * re-check of the last checked engine before its bottom half has run.
 		 */
-		if((dirqval & DMA_ENG_INT_ACTIVE_MASK) && 
+		if((dirqval & DMA_ENG_INT_ACTIVE_MASK) &&
 				(dirqval & DMA_ENG_INT_ENABLE))
 		{
 			spin_lock(&IntrLock);
@@ -999,7 +1070,7 @@ int IntrCheck(struct pci_dev * dev)
 
 	/* Now, check each C2S DMA engine (32 to 39) */
 	imask = (girqval & DMA_C2S_ENG_INT_VAL) >> 24;
-	for(i=32; i<39; i++) 
+	for(i=32; i<39; i++)
 	{
 		if(!imask) break;
 		if(!(imask & (0x01<<(i-32)))) continue;
@@ -1015,7 +1086,7 @@ int IntrCheck(struct pci_dev * dev)
 		/* Check whether interrupt is enabled, otherwise it could be a
 		 * re-check of the last checked engine before its bottom half has run.
 		 */
-		if((dirqval & DMA_ENG_INT_ACTIVE_MASK) && 
+		if((dirqval & DMA_ENG_INT_ACTIVE_MASK) &&
 				(dirqval & DMA_ENG_INT_ENABLE))
 		{
 			spin_lock(&IntrLock);
@@ -1078,7 +1149,7 @@ static void PktHandler(int eng, Dma_Engine * eptr)
 	PktBuf * pbuf;
 	struct PktPool * ppool;
 	u32 flag;
-	unsigned char* bufInfo;      
+	unsigned char* bufInfo;
 
 	rptr = &(eptr->BdRing);
 	uptr = &(eptr->user);
@@ -1093,7 +1164,7 @@ static void PktHandler(int eng, Dma_Engine * eptr)
 
 	/* Handle engine operations */
 	bd_processed_save = 0;
-	if ((bd_processed = Dma_BdRingFromHw(rptr, DMA_BD_CNT, &BdPtr)) > 0) 
+	if ((bd_processed = Dma_BdRingFromHw(rptr, DMA_BD_CNT, &BdPtr)) > 0)
 	{
 
 		/* First, get a pool of packets to work with */
@@ -1105,7 +1176,7 @@ static void PktHandler(int eng, Dma_Engine * eptr)
 		bd_processed_save = bd_processed;
 		BdCurPtr = BdPtr;
 		j = 0;
-		do 
+		do
 		{
 			pbuf = &((ppool->pbuf)[j]);
 			bufPA   = (dma_addr_t) Dma_mBdGetBufAddr(BdCurPtr);
@@ -1124,9 +1195,9 @@ static void PktHandler(int eng, Dma_Engine * eptr)
 				{
 					if(!PageReserved(pbuf->pageAddr))
 					{
-						SetPageDirty(pbuf->pageAddr);      
+						SetPageDirty(pbuf->pageAddr);
 					}
-					else 
+					else
 					{
 						printk("###SetPage###");
 					}
@@ -1134,14 +1205,14 @@ static void PktHandler(int eng, Dma_Engine * eptr)
 				}
 
 
-				pci_unmap_page(pdev, bufPA,0x1000, flag); 
+				pci_unmap_page(pdev, bufPA,0x1000, flag);
 
-			} 
+			}
 			else    // PCI_DMA_TODEVICE
 			{
 				bufPA		= Dma_mBdGetBufAddr(BdCurPtr);
 				pbuf->size     = Dma_mBdGetStatLength(BdCurPtr);
-				pbuf->flags 	= Dma_mBdGetCtrl(BdCurPtr);            
+				pbuf->flags 	= Dma_mBdGetCtrl(BdCurPtr);
 				pbuf->bufInfo   = (unsigned char *)Dma_mBdGetId(BdCurPtr);
 				pbuf->pageAddr  = (unsigned char *)Dma_mBdGetPageAddr(BdCurPtr);
 
@@ -1159,7 +1230,7 @@ static void PktHandler(int eng, Dma_Engine * eptr)
 	Dma_mBdSetId(BdCurPtr, NULL);
 	Dma_mBdSetPageAddr(BdCurPtr,NULL);
 #endif
-			
+
 			Dma_mBdSetStatus(BdCurPtr,0);
 
 			BdCurPtr = Dma_mBdRingNext(rptr, BdCurPtr);
@@ -1193,7 +1264,7 @@ static void PktHandler(int eng, Dma_Engine * eptr)
 	if(uptr->mode == ETHERNET_APPMODE)
 	{
 		/* Handle any RX-specific engine operations */
-		if(rptr->IsRxChannel) 
+		if(rptr->IsRxChannel)
 		{
 			/* Replenish BDs in the RX ring */
 			DmaSetupRecvBuffers(pdev, eptr);
@@ -1215,7 +1286,7 @@ static void poll_routine(unsigned long __opaque)
 
 	lp = pci_get_drvdata(pdev);
 
-	for(i=0; i<MAX_DMA_ENGINES; i++) 
+	for(i=0; i<MAX_DMA_ENGINES; i++)
 	{
 #ifdef TH_BH_ISR
 		/* Do housekeeping only if adequate time has elapsed since
@@ -1238,7 +1309,7 @@ static void poll_routine(unsigned long __opaque)
 	}
 
 	/* Reschedule poll routine. Incase interrupts are enabled, the
-	 * bulk of processing should happen in the ISR. 
+	 * bulk of processing should happen in the ISR.
 	 */
 #ifdef TH_BH_ISR
 	offset = HZ / 50;
@@ -1261,14 +1332,14 @@ static void poll_stats(unsigned long __opaque)
 	u64 base;
 #else
 	u32 base;
-#endif	
+#endif
         int scal_val = 0;
 
 	if(DriverState == UNREGISTERING)
 		return;
 
 #ifdef PM_SUPPORT
-	if(DriverState == PM_PREPARE)	
+	if(DriverState == PM_PREPARE)
 		return;
 #endif
 
@@ -1276,7 +1347,7 @@ static void poll_stats(unsigned long __opaque)
 	log_verbose("s%d ", get_cpu());
 
 	/* First, get DMA payload statistics */
-	for(i=0; i<MAX_DMA_ENGINES; i++) 
+	for(i=0; i<MAX_DMA_ENGINES; i++)
 	{
 		if(!((lp->engineMask) & (1LL << i)))
 			continue;
@@ -1290,7 +1361,7 @@ static void poll_stats(unsigned long __opaque)
 		at = Dma_mReadReg(rptr->ChanBase, REG_DMA_ENG_ACTIVE_TIME);
 		wt = Dma_mReadReg(rptr->ChanBase, REG_DMA_ENG_WAIT_TIME);
 		cb = Dma_mReadReg(rptr->ChanBase, REG_DMA_ENG_COMP_BYTES);
-            
+
 
 		/* Want to store the latest set of statistics. If the GUI is not
 		 * running, the statistics will build up. So, read pointer should
@@ -1301,16 +1372,16 @@ static void poll_stats(unsigned long __opaque)
         DStats[i][dstatsWrite[i]].LBR = 4*(cb>>2);
         scal_val = ((Dma_mReadReg(rptr->ChanBase, REG_DMA_ENG_CAP) & DMA_ENG_SCAL_FACT) >> 30);
         DStats[i][dstatsWrite[i]].scaling_factor = 1 << scal_val;
-               
-		dstatsWrite[i] += 1; 
+
+		dstatsWrite[i] += 1;
 		if(dstatsWrite[i] >= MAX_STATS) dstatsWrite[i] = 0;
 
-		if(dstatsNum[i] < MAX_STATS) 
+		if(dstatsNum[i] < MAX_STATS)
 			dstatsNum[i] += 1;
 		/* else move the read pointer forward */
 		else
 		{
-			dstatsRead[i] += 1; 
+			dstatsRead[i] += 1;
 			if(dstatsRead[i] >= MAX_STATS) dstatsRead[i] = 0;
 		}
 
@@ -1342,7 +1413,7 @@ static void poll_stats(unsigned long __opaque)
 	/* Registers to be read for TRN stats */
 #ifdef X86_64
 	base = (dmaData->barInfo[0].baseVAddr);
-#else	
+#else
 	base = (u32)(dmaData->barInfo[0].baseVAddr);
 #endif
 	/* This counts all TLPs including header */
@@ -1379,12 +1450,12 @@ static void poll_stats(unsigned long __opaque)
 	pmval.vcc2v5 = XIo_In32(base+PVTMON_VCC2V5);
 	pmval.vcc1v5 = XIo_In32(base+PVTMON_VCC1V5);
 	pmval.mgt_avcc = XIo_In32(base+PVTMON_MGT_AVCC);
-	pmval.mgt_avtt = XIo_In32(base+PVTMON_MGT_AVTT); 
-	pmval.vccaux_io = XIo_In32(base+PVTMON_VCCAUX_IO); 
-	pmval.vccbram = XIo_In32(base+PVTMON_VCC_BRAM); 
-	pmval.mgt_vccaux = XIo_In32(base+PVTMON_MGT_VCCAUX); 
-	pmval.pwr_rsvd = XIo_In32(base+PVTMON_RSVD); 
-	pmval.die_temp = (XIo_In32(base+DIE_TEMP)*504)/1024 - 273; 
+	pmval.mgt_avtt = XIo_In32(base+PVTMON_MGT_AVTT);
+	pmval.vccaux_io = XIo_In32(base+PVTMON_VCCAUX_IO);
+	pmval.vccbram = XIo_In32(base+PVTMON_VCC_BRAM);
+	pmval.mgt_vccaux = XIo_In32(base+PVTMON_MGT_VCCAUX);
+	pmval.pwr_rsvd = XIo_In32(base+PVTMON_RSVD);
+	pmval.die_temp = (XIo_In32(base+DIE_TEMP)*504)/1024 - 273;
 #ifdef DEBUG_VERBOSE
 	log_verbose(KERN_INFO "VCCINT=%x",pmval.vcc);
 	log_verbose(KERN_INFO "VCCAUX=%x",pmval.vccaux);
@@ -1437,7 +1508,7 @@ static void PutUnusedPkts(Dma_Engine * eptr, PktBuf * pbuf, int numpkts)
 	(uptr->UserPutPkt)(eptr, pbuf, numpkts, uptr->privData);
 }
 /*
- * DmaSetupRecvBuffers allocates as many packet buffers as it can up to 
+ * DmaSetupRecvBuffers allocates as many packet buffers as it can up to
  * the number of free C2S buffer descriptors, and sets up the C2S
  * buffer descriptors to DMA into the buffers.
  */
@@ -1463,8 +1534,8 @@ static void DmaSetupRecvBuffers(struct pci_dev *pdev, Dma_Engine * eptr)
 	free_bd_count = Dma_mBdRingGetFreeCnt(rptr);
 
 	/* Maintain a separation between start and end of BD ring. This is
-	 * required because DMA will stall if the two pointers coincide - 
-	 * this will happen whether ring is full or empty. 
+	 * required because DMA will stall if the two pointers coincide -
+	 * this will happen whether ring is full or empty.
 	 */
 	if(free_bd_count > 2) free_bd_count -= 2;
 	else return;
@@ -1503,7 +1574,7 @@ static void DmaSetupRecvBuffers(struct pci_dev *pdev, Dma_Engine * eptr)
 
 			pbuf = &((ppool->pbuf)[i]);
 			bufPA = pci_map_single(pdev, (u32 *)(pbuf->pktBuf), pbuf->size, PCI_DMA_FROMDEVICE);
-			log_verbose(KERN_INFO "The buffer after alloc is at VA %x PA %x size %d\n", 
+			log_verbose(KERN_INFO "The buffer after alloc is at VA %x PA %x size %d\n",
 					(u32) pbuf->pktBuf, (unsigned int)bufPA, pbuf->size);
 
 			Dma_mBdSetBufAddr(BdCurPtr, bufPA);
@@ -1520,18 +1591,18 @@ static void DmaSetupRecvBuffers(struct pci_dev *pdev, Dma_Engine * eptr)
 			if(!(eptr->intrCount % INT_COAL_CNT))
 				mask |= DMA_BD_INT_COMP_MASK;
 			eptr->intrCount += 1;
-			Dma_mBdSetCtrl(BdCurPtr, mask);       
+			Dma_mBdSetCtrl(BdCurPtr, mask);
 #endif
 
 			BdCurPtr = Dma_mBdRingNext(rptr, BdCurPtr);
 		}
 
 		/* Enqueue all Rx BDs with attached buffers such that they are
-		 * ready for frame reception. 
+		 * ready for frame reception.
 		 */
 		result = Dma_BdRingToHw(rptr, numgot, BdPtr);
 		if (result != XST_SUCCESS) {
-			/* Should not come here. Incase of error, unmap buffers, 
+			/* Should not come here. Incase of error, unmap buffers,
 			 * unallocate BDs, and return buffers to app driver.
 			 */
 			printk(KERN_ERR "DmaSetupRecvBuffers: BdRingToHw unsuccessful (%d)\n",
@@ -1547,8 +1618,8 @@ static void DmaSetupRecvBuffers(struct pci_dev *pdev, Dma_Engine * eptr)
 Dma_mBdSetId_NULL(BdCurPtr, NULL);
 #else
 Dma_mBdSetId(BdCurPtr, NULL);
-#endif				
-				
+#endif
+
 				BdCurPtr = Dma_mBdRingNext(rptr, BdCurPtr);
 			}
 			Dma_BdRingUnAlloc(rptr, numgot, BdPtr);
@@ -1558,7 +1629,7 @@ Dma_mBdSetId(BdCurPtr, NULL);
 
 		free_bd_count -= numgot;
 		numbds += numgot;
-		log_verbose(KERN_INFO "free_bd_count %d, numbds %d, numgot %d\n", 
+		log_verbose(KERN_INFO "free_bd_count %d, numbds %d, numgot %d\n",
 				free_bd_count, numbds, numgot);
 	} while (free_bd_count > 0);
 
@@ -1591,11 +1662,11 @@ Dma_mBdSetId(BdCurPtr, NULL);
 int descriptor_init(struct pci_dev *pdev, Dma_Engine * eptr)
 {
 	int dftsize, numbds;
-#ifdef X86_64	
+#ifdef X86_64
 	u64 * BdPtr;
 #else
 	u32 * BdPtr;
-#endif	
+#endif
 	dma_addr_t BdPhyAddr ;
 	int result;
 	u32 delta = 0;
@@ -1614,7 +1685,7 @@ int descriptor_init(struct pci_dev *pdev, Dma_Engine * eptr)
 		return -1;
 	}
 
-	log_normal(KERN_INFO "BD ring space allocated from %p, PA 0x%x\n", 
+	log_normal(KERN_INFO "BD ring space allocated from %p, PA 0x%x\n",
 			BdPtr, (unsigned int)BdPhyAddr);
 	numbds = Dma_BdRingAlign((u32)BdPtr, dftsize, DMA_BD_MINIMUM_ALIGNMENT, &delta);
 	if(numbds <= 0) {
@@ -1705,7 +1776,7 @@ void descriptor_free(struct pci_dev *pdev, Dma_Engine * eptr)
 
 	/* First recover buffers and BDs queued up for DMA, then pass to user */
 	bd_processed_save = 0;
-	if ((bd_processed = Dma_BdRingForceFromHw(rptr, DMA_BD_CNT, &BdPtr)) > 0) 
+	if ((bd_processed = Dma_BdRingForceFromHw(rptr, DMA_BD_CNT, &BdPtr)) > 0)
 	{
 		log_normal(KERN_INFO "descriptor_free: Forced %d BDs from hw\n", bd_processed);
 		/* First, get a pool of packets to work with */
@@ -1714,7 +1785,7 @@ void descriptor_free(struct pci_dev *pdev, Dma_Engine * eptr)
 		bd_processed_save = bd_processed;
 		BdCurPtr = BdPtr;
 		j = 0;
-		do 
+		do
 		{
 			pbuf = &((ppool->pbuf)[j]);
 
@@ -1730,18 +1801,18 @@ void descriptor_free(struct pci_dev *pdev, Dma_Engine * eptr)
 			pbuf->userInfo = Dma_mBdGetUserData(BdCurPtr);
 			pbuf->pageAddr = (unsigned char *)Dma_mBdGetPageAddr(BdCurPtr);
 			/* Now unmap this buffer */
-#ifdef DEBUG_VERBOSE            
+#ifdef DEBUG_VERBOSE
 			log_verbose(KERN_INFO "Length %d Buf %x\n", pbuf->size, (u32) bufPA);
-#endif            
-			pci_unmap_page(pdev, bufPA, pbuf->size, flag);    
+#endif
+			pci_unmap_page(pdev, bufPA, pbuf->size, flag);
 
 
 			/* reset BD id */
 #ifdef X86_64
 			Dma_mBdSetId_NULL(BdCurPtr, NULL);
-#else			
+#else
 			Dma_mBdSetId(BdCurPtr, NULL);
-#endif			
+#endif
 			Dma_mBdSetPageAddr(BdCurPtr,NULL);
 
 			BdCurPtr = Dma_mBdRingNext(rptr, BdCurPtr);
@@ -1778,10 +1849,10 @@ void descriptor_free(struct pci_dev *pdev, Dma_Engine * eptr)
 	//spin_lock_bh(&DmaLock);
 	log_verbose(KERN_INFO
 			"XDMA: (descriptor_free) BD ring PA: 0x%x, VA: 0x%x, Size: %d, Delta: %d\n",
-			(unsigned int) (eptr->descSpacePA - eptr->delta), 
+			(unsigned int) (eptr->descSpacePA - eptr->delta),
 			(unsigned int) (eptr->descSpaceVA - eptr->delta),
 			(eptr->descSpaceSize + eptr->delta), eptr->delta);
-	pci_free_consistent(pdev, (eptr->descSpaceSize + eptr->delta), 
+	pci_free_consistent(pdev, (eptr->descSpaceSize + eptr->delta),
 			(eptr->descSpaceVA - eptr->delta),
 			(eptr->descSpacePA - eptr->delta));
 	//spin_unlock_bh(&DmaLock);
@@ -1824,7 +1895,7 @@ void disp_bd_ring(Dma_BdRing *bd_ring)
 #else
 	dptr = (u32 *)bd_ring->FirstBdAddr;
 #endif
-	for (idx = 0; idx < num_bds; idx++) 
+	for (idx = 0; idx < num_bds; idx++)
 	{
 		int i;
 		printk("%3d ", idx);
@@ -2042,35 +2113,35 @@ static void ReadDMAEngineConfiguration(struct pci_dev * pdev, struct privData * 
 	u64 base, offset;
 #else
 	u32 base, offset;
-#endif	
+#endif
 	u32 val, type, dirn, num, bc;
 	int i;
-    int scalval=0,reg=0; 
+    int scalval=0,reg=0;
 	Dma_Engine * eptr;
 
 	/* DMA registers are in BAR0 */
 #ifdef X86_64
 	base = (dmaInfo->barInfo[0].baseVAddr);
-#else	
+#else
 	base = (u32)(dmaInfo->barInfo[0].baseVAddr);
 #endif
 	/* Walk through the capability register of all DMA engines */
 	for(offset = DMA_OFFSET, i=0; offset < DMA_SIZE; offset += DMA_ENGINE_PER_SIZE, i++)
 	{
-		log_verbose(KERN_INFO "Reading engine capability from %x\n", 
+		log_verbose(KERN_INFO "Reading engine capability from %x\n",
 				(base+offset+REG_DMA_ENG_CAP));
 		val = Dma_mReadReg((base+offset), REG_DMA_ENG_CAP);
 		log_verbose(KERN_INFO "REG_DMA_ENG_CAP returned %x\n", val);
-                
+
 
 		if(val & DMA_ENG_PRESENT_MASK)
 		{
 			printk(KERN_INFO "##Engine capability is %x##\n", val);
-            scalval = (val & DMA_ENG_SCAL_FACT) >> 30;  
+            scalval = (val & DMA_ENG_SCAL_FACT) >> 30;
             printk(KERN_INFO ">> DMA engine scaling factor = 0x%x \n", scalval);
             reg = XIo_In32(base+PCIE_CAP_REG);
             XIo_Out32(base+PCIE_CAP_REG,(reg | scalval ));
- 
+
 			eptr = &(dmaInfo->Dma[i]);
 
 			log_verbose(KERN_INFO "DMA Engine present at offset %x: ", offset);
@@ -2081,7 +2152,7 @@ static void ReadDMAEngineConfiguration(struct pci_dev * pdev, struct privData * 
 			else
 				printk("S2C, ");
 
-			type = (val & DMA_ENG_TYPE_MASK); 
+			type = (val & DMA_ENG_TYPE_MASK);
 			if(type == DMA_ENG_BLOCK)
 				printk("Block DMA, ");
 			else if(type == DMA_ENG_PACKET)
@@ -2101,7 +2172,7 @@ static void ReadDMAEngineConfiguration(struct pci_dev * pdev, struct privData * 
 			}
 
 			/* Initialise this engine's data structure. This will also
-			 * reset the DMA engine. 
+			 * reset the DMA engine.
 			 */
 			Dma_Initialize(eptr, (base + offset), dirn);
 			eptr->pdev = pdev;
@@ -2110,6 +2181,12 @@ static void ReadDMAEngineConfiguration(struct pci_dev * pdev, struct privData * 
 		}
 	}
 	log_verbose(KERN_INFO "Engine mask is 0x%llx\n", dmaInfo->engineMask);
+
+
+	/* Just register the driver. No kernel boot options used. */
+	printk(KERN_INFO "XDMA: Inserting Xilinx base DMA driver in kernel.\n");
+	return pci_register_driver(&xdma_driver);
+
 }
 
 /* Character device file operations */
@@ -2121,7 +2198,7 @@ static int xdma_dev_open(struct inode * in, struct file * filp)
 		return -1;
 	}
 #ifdef PM_SUPPORT
-	if(DriverState == PM_PREPARE)    
+	if(DriverState == PM_PREPARE)
 	{
 		printk("Driver is entering Power Down state. No more device open!\n");
 		return -1;
@@ -2177,7 +2254,7 @@ static long xdma_dev_ioctl(struct file * filp,
 	TestCmd tc;
 	UserState ustate;
 	PCIState pcistate;
-	LedStats lstats; 
+	LedStats lstats;
 #ifdef PM_SUPPORT
 	DirectLinkChg dl;
 	PowerMonitorVal pmval_temp;
@@ -2305,19 +2382,19 @@ static long xdma_dev_ioctl(struct file * filp,
 #ifdef DEBUG_VERBOSE
        if(cmd == ISTOP_TEST)
        {
-        if(tc.Engine == 0)      
-        {     
+        if(tc.Engine == 0)
+        {
         eptr = &(dmaData->Dma[32]);
         rptr = &(eptr->BdRing);
-        log_verbose("## Path 0 %d %d %d %d ##\n",rptr->FreeCnt,rptr->PreCnt,rptr->HwCnt,rptr->PostCnt);  
+        log_verbose("## Path 0 %d %d %d %d ##\n",rptr->FreeCnt,rptr->PreCnt,rptr->HwCnt,rptr->PostCnt);
         }
         else if(tc.Engine == 1)
         {
         eptr = &(dmaData->Dma[33]);
         rptr = &(eptr->BdRing);
-        log_verbose("## Path 1 %d %d %d %d ##\n",rptr->FreeCnt,rptr->PreCnt,rptr->HwCnt,rptr->PostCnt); 
+        log_verbose("## Path 1 %d %d %d %d ##\n",rptr->FreeCnt,rptr->PreCnt,rptr->HwCnt,rptr->PostCnt);
          }
-        
+
         }
 #endif
 			break;
@@ -2337,10 +2414,10 @@ case IGET_LED_STATISTICS:
 			lstats.DdrCalib0 = (Status_Reg >> 30) & 0x1; /* bit 30 'on' of Status Register indicated DDR3-SODMM0 Calibration done */
       	 		lstats.DdrCalib1 = (Status_Reg >> 31) & 0x1;  /* bit 31 'on' of Status Register indicated DDR3-SODMM1 Calibration done */
 
-			lstats.Phy3 = (Status_Reg >> 29) & 0x1; 
-			lstats.Phy2 = (Status_Reg >> 28) & 0x1; 
-			lstats.Phy1 = (Status_Reg >> 27) & 0x1; 
-			lstats.Phy0 = (Status_Reg >> 26) & 0x1; 
+			lstats.Phy3 = (Status_Reg >> 29) & 0x1;
+			lstats.Phy2 = (Status_Reg >> 28) & 0x1;
+			lstats.Phy1 = (Status_Reg >> 27) & 0x1;
+			lstats.Phy0 = (Status_Reg >> 26) & 0x1;
 
                         if(copy_to_user((LedStats *)arg, &lstats, sizeof(LedStats)))
 			{
@@ -2428,7 +2505,7 @@ case IGET_LED_STATISTICS:
 				eng.MinPktSize = ustate.MinPktSize;
 				eng.MaxPktSize = ustate.MaxPktSize;
 				eng.TestMode = ustate.TestMode;
-				eng.DataMismatch = ustate.DataMismatch;			
+				eng.DataMismatch = ustate.DataMismatch;
 			}
 			else
 			{
@@ -2620,7 +2697,7 @@ static int SetLinkSpeed(struct pci_dev * pdev, DirectLinkChg * dl)
 	int selfGen2Cap, partGen2Cap;
 #ifdef X86_64
 	u64 base = (dmaData->barInfo[0].baseVAddr);
-#else	
+#else
 	u32 base = (u32)(dmaData->barInfo[0].baseVAddr);
 #endif
 	log_verbose(KERN_ERR "..SetLinkSpeed: %d...\n", newSpeed);
@@ -2655,7 +2732,7 @@ static int SetLinkSpeed(struct pci_dev * pdev, DirectLinkChg * dl)
 		printk(KERN_ERR "....current speed is same as new speed %d\n", curSpeed);
 		return -1;
 	}
-	if(newSpeed==1) 
+	if(newSpeed==1)
 	{
 		if(selfGen2Cap==0 )
 		{
@@ -2731,7 +2808,7 @@ static int SetLinkWidth(struct pci_dev * pdev, DirectLinkChg * dl)
 		printk(KERN_ERR "....current width is same as new width %d\n", curWidth);
 		return -1;
 	}
-	if(initWidth != 0) 
+	if(initWidth != 0)
 	{
 		initWidth -= 1;
 		if( (newWidth > initWidth) || (linkUpCap==0) )
@@ -2748,7 +2825,7 @@ static int SetLinkWidth(struct pci_dev * pdev, DirectLinkChg * dl)
 	reg = XIo_In32(base+PCIE_CTRL_REG);
 	log_verbose(KERN_ERR "value read from PCIE_CTRL_REG is 0x%x\n",reg);
 	reg &= ~(0x1c);
-	reg |= (newWidth << 2); 
+	reg |= (newWidth << 2);
 	reg |= 0x80000000;      // initiate width change
 	log_verbose(KERN_ERR "value being written  to PCIE_CTRL_REG is 0x%x\n",reg);
 	XIo_Out32(base+PCIE_CTRL_REG, reg);
@@ -2834,10 +2911,10 @@ static int ReadPCIState(struct pci_dev * pdev, PCIState * pcistate)
       pcistate->LinkSpeed = 2;    //- 5G
     else if ((link_speed_sta == 3) & ((link_cap2_speed & 0x04) == 4))
       pcistate->LinkSpeed = 4;    //- 8G
-	//- Spec 2.1 has CAP2 reg as RsvD - returns 0 
+	//- Spec 2.1 has CAP2 reg as RsvD - returns 0
 	//- assign link speed from status register directly if CAP2 is 0
-    else if (link_cap2_speed == 0)	
-      pcistate->LinkSpeed = link_speed_sta;    
+    else if (link_cap2_speed == 0)
+      pcistate->LinkSpeed = link_speed_sta;
     else
       pcistate->LinkSpeed = 0;
 
@@ -2884,12 +2961,13 @@ static int  xdma_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 {
 	int pciRet, chrRet;
 	int i;
-	dev_t xdmaDev;
+
+    dev_t xdmaDev;
 	static struct file_operations xdmaDevFileOps;
 	struct timer_list * timer = &poll_timer;
 
 	/* Initialize device before it is used by driver. Ask low-level
-	 * code to enable I/O and memory. Wake up the device if it was 
+	 * code to enable I/O and memory. Wake up the device if it was
 	 * suspended. Beware, this function can fail.
 	 */
 	pciRet = pci_enable_device(pdev);
@@ -2913,7 +2991,7 @@ static int  xdma_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	}
 	pktPoolTail = &pktPool[MAX_POOL-1];
 	pktPoolHead = &pktPool[0];
-#ifdef DEBUG_VERBOSE    
+#ifdef DEBUG_VERBOSE
 	for(i=0; i<MAX_POOL; i++)
 		printk("pktPool[%d] %p pktarray %p\n", i, &pktPool[i], pktPool[i].pbuf);
 	printk("pktPoolHead %p pktPoolTail %p\n", pktPoolHead, pktPoolTail);
@@ -2943,16 +3021,16 @@ static int  xdma_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	ReadRoot(pdev);
 #endif
 
-	/* 
+	/*
 	 * Enable bus-mastering on device. Calls pcibios_set_master() to do
 	 * the needed architecture-specific settings.
 	 */
 	pci_set_master(pdev);
 
 	/* Reserve PCI I/O and memory resources. Mark all PCI regions
-	 * associated with PCI device as being reserved by owner. Do not 
+	 * associated with PCI device as being reserved by owner. Do not
 	 * access any address inside the PCI regions unless this call returns
-	 * successfully. 
+	 * successfully.
 	 */
 	pciRet = pci_request_regions(pdev, DRIVER_NAME);
 	if (pciRet < 0) {
@@ -3004,10 +3082,10 @@ static int  xdma_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 				continue;
 		}
 		/* Set a bitmask for all the BARs that are present. */
-		else 
+		else
 			(dmaData->barMask) |= ( 1 << i );
 
-		/* Check all BARs for memory-mapped or I/O-mapped. The driver is 
+		/* Check all BARs for memory-mapped or I/O-mapped. The driver is
 		 * intended to be memory-mapped.
 		 */
 		if (!(pci_resource_flags(pdev, i) & IORESOURCE_MEM)) {
@@ -3022,27 +3100,27 @@ static int  xdma_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		dmaData->barInfo[i].basePAddr = pci_resource_start(pdev, i);
 		dmaData->barInfo[i].baseLen = size;
 
-		/* Map bus memory to CPU space. The ioremap may fail if size 
-		 * requested is too long for kernel to provide as a single chunk 
-		 * of memory, especially if users are sharing a BAR region. In 
-		 * such a case, call ioremap for more number of smaller chunks 
-		 * of memory. Or mapping should be done based on user request 
+		/* Map bus memory to CPU space. The ioremap may fail if size
+		 * requested is too long for kernel to provide as a single chunk
+		 * of memory, especially if users are sharing a BAR region. In
+		 * such a case, call ioremap for more number of smaller chunks
+		 * of memory. Or mapping should be done based on user request
 		 * with user size. Neither is being done now - maybe later.
 		 */
-		if((dmaData->barInfo[i].baseVAddr = 
+		if((dmaData->barInfo[i].baseVAddr =
 					ioremap((dmaData->barInfo[i].basePAddr), size)) == 0UL)
 		{
 			printk(KERN_ERR "Cannot map BAR %d space, invalidating.\n", i);
 			(dmaData->barMask) &= ~( 1 << i );
 		}
-		else 
-			log_verbose(KERN_INFO "[BAR %d] Base PA %x Len %d VA %x\n", i, 
-					(u32) (dmaData->barInfo[i].basePAddr), 
+		else
+			log_verbose(KERN_INFO "[BAR %d] Base PA %x Len %d VA %x\n", i,
+					(u32) (dmaData->barInfo[i].basePAddr),
 					(u32) (dmaData->barInfo[i].baseLen),
 					(u32) (dmaData->barInfo[i].baseVAddr));
 	}
 	log_verbose(KERN_INFO "Bar mask is 0x%x\n", (dmaData->barMask));
-	log_normal(KERN_INFO "DMA Base VA %x\n", 
+	log_normal(KERN_INFO "DMA Base VA %x\n",
 			(u32)(dmaData->barInfo[0].baseVAddr));
 
 	/* Disable global interrupts */
@@ -3114,7 +3192,7 @@ static int  xdma_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		tstatsRead = tstatsWrite = tstatsNum = 0;
 
 		/* Start stats polling routine */
-		log_normal(KERN_INFO "probe: Starting stats poll routine with %x\n", 
+		log_normal(KERN_INFO "probe: Starting stats poll routine with %x\n",
 				(u32)pdev);
 		/* Now start timer */
 		init_timer(&stats_timer);
@@ -3161,6 +3239,32 @@ static int  xdma_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	Dma_mIntEnable(dmaData->barInfo[0].baseVAddr);
 
 #endif
+    //gus
+    struct privData *lp;
+#ifdef X86_64
+    u64 base;
+#else
+    u32 base;
+#endif
+
+    //init ncap register
+    lp = pci_get_drvdata(pdev);
+#ifdef X86_64
+    base = (lp->barInfo[0].baseVAddr);
+#else
+    base = (u32)(lp->barInfo[0].baseVAddr);
+#endif
+
+    //gus
+    Dma_mWriteReg(base, REG_THRESHOLD_HIGH_RX,THRESHOLD_HIGH_RX);
+    Dma_mWriteReg(base, REG_THRESHOLD_HIGH_TX,THRESHOLD_HIGH_TX);
+    Dma_mWriteReg(base, REG_THRESHOLD_LOW_RX,THRESHOLD_LOW_RX);
+    Dma_mWriteReg(base, REG_THRESHOLD_SAFEGUARD,THRESHOLD_SAFEGUARD);
+    Dma_mWriteReg(base, REG_AGGRESSIVE_MODE,AGGRESSIVE_MODE);
+    Dma_mWriteReg(base, REG_TIMER_INTERVAL,TIMER_INTERVAL);
+    Dma_mWriteReg(base, REG_NCAP_ENABLE,NCAP_ENABLE);
+
+
 
 	log_verbose("Value of HZ is %d\n", HZ);
 	log_verbose("End of probe\n");
@@ -3177,16 +3281,16 @@ static void  xdma_remove(struct pci_dev *pdev)
 	u32 girqval;
 	u64  base;
 #else
-	u32 girqval; 
+	u32 girqval;
 	u32 base;
-#endif	
+#endif
 #endif
 
 #ifdef FIFO_EMPTY_CHECK
 #ifdef X86_64
-	u64 barBase = (dmaData->barInfo[0].baseVAddr);  
+	u64 barBase = (dmaData->barInfo[0].baseVAddr);
 #else
-	u32 barBase = (u32)(dmaData->barInfo[0].baseVAddr);  
+	u32 barBase = (u32)(dmaData->barInfo[0].baseVAddr);
 #endif
 #endif
 
@@ -3210,13 +3314,13 @@ static void  xdma_remove(struct pci_dev *pdev)
 #else
 	base = (u32)(dmaData->barInfo[0].baseVAddr);
 #endif
-	
+
 	Dma_mIntDisable(base);
 
 	/* Disable MSI and interrupts */
 	free_irq(pdev->irq, pdev);
 	if(MSIEnabled) pci_disable_msi(pdev);
-	girqval = Dma_mReadReg(base, REG_DMA_CTRL_STATUS); 
+	girqval = Dma_mReadReg(base, REG_DMA_CTRL_STATUS);
 	//if(girqval & (DMA_INT_ACTIVE_MASK|DMA_INT_PENDING_MASK|DMA_USER_INT_ACTIVE_MASK))
 	//Dma_mWriteReg(base, REG_DMA_CTRL_STATUS, girqval);
 	printk("While disabling interrupts, got %x\n", girqval);
@@ -3248,13 +3352,13 @@ static void  xdma_remove(struct pci_dev *pdev)
 
 	/* Reset DMA - this includes disabling interrupts and DMA. */
 	log_normal(KERN_INFO "Doing DMA reset.\n");
-	for(i=0; i<MAX_DMA_ENGINES; i++) 
+	for(i=0; i<MAX_DMA_ENGINES; i++)
 	{
 		if((lp->engineMask) & (1LL << i))
 			Dma_Reset(&(lp->Dma[i]));
 	}
 
-	for(i=0; i<MAX_BARS; i++) 
+	for(i=0; i<MAX_BARS; i++)
 	{
 		if((dmaData->barMask) & ( 1 << i ))
 			iounmap(dmaData->barInfo[i].baseVAddr);
@@ -3282,8 +3386,11 @@ static int __init xdma_init(void)
 	spin_lock_init(&DmaStatsLock);
 	spin_lock_init(&PktPoolLock);
 
+    initPolicy();
+
 	/* Just register the driver. No kernel boot options used. */
 	printk(KERN_INFO "XDMA: Inserting Xilinx base DMA driver in kernel.\n");
+
 	return pci_register_driver(&xdma_driver);
 }
 
@@ -3326,6 +3433,119 @@ static void __exit xdma_cleanup(void)
 	printk(KERN_INFO "XDMA: Unregistering Xilinx base DMA driver from kernel.\n");
 }
 
+//gus
+int incFreqToMax(void)
+{
+    //gus
+    int cpu;
+    int ret;
+
+    //this flag use to stop to recall incFreqToMax.
+    //this falg will be set 0 when decfreq is called.
+    if(ncap_on_flag == 1)
+        return;
+    else
+        ncap_on_flag = 1;
+
+    //wake up all idle cpu
+	printk(KERN_INFO "Wake Up all Idle CPU\n");
+    wake_up_all_idle_cpus();
+
+
+	for_each_online_cpu(cpu)
+    {
+        //increase to max
+	    printk(KERN_INFO "suspend ondemand\n");
+        ondemand_flag[cpu] = 1;
+
+        printk(KERN_INFO "start cpu %d increase freq to %d\n",cpu,cpufreq_policies[cpu]->max);
+        ret =  __cpufreq_driver_target(cpufreq_policies[cpu], cpufreq_policies[cpu]->max,  AGGRESSIVE_MODE  ? CPUFREQ_RELATION_L : CPUFREQ_RELATION_H);
+        if(ret != 0 )
+        {
+            printk(KERN_ERR "err occur %d \n",ret);
+            return 1;
+        }
+    }
+    //disable menu governor
+    cpuidle_disable_flag = 1;
+	printk(KERN_INFO "suspend menu\n");
+
+
+    return 0;
+}
+
+
+int decFreqToNext(void)
+{
+    int cpu;
+    int ret;
+    unsigned int next_freq;
+    static int try_count = 0;
+
+    if(ncap_on_flag == 1)
+        try_count = 0;
+    if(try_count >= FCONS)
+        return 0;
+
+    ncap_on_flag = 0;
+
+    try_count ++;
+	for_each_online_cpu(cpu)
+    {
+        //enable menu governor
+        //increase to max
+        //next_freq = cpufreq_policies[cpu]->cur - (cpufreq_policies[cpu]->max - cpufreq_policies[cpu]->min)/FCONS;
+        next_freq = freq_table[try_count];
+        //for debug
+        if(next_freq > cpufreq_policies[cpu]->min)
+        {
+	        printk(KERN_INFO "cpu %d decrease freq to %u\n",cpu,next_freq);
+            ret =  __cpufreq_driver_target(cpufreq_policies[cpu], next_freq,  AGGRESSIVE_MODE ? CPUFREQ_RELATION_L : CPUFREQ_RELATION_H);
+            if(ret != 0 )
+            {
+                printk(KERN_ERR "err occur %d \n",ret);
+                return 1;
+            }
+        }
+        else
+        {
+            //enable ondemand
+	        printk(KERN_INFO "resume ondemand\n");
+            ondemand_flag[cpu] = 0;
+        }
+    }
+    //enable menu governor
+    cpuidle_disable_flag = 0;
+    printk(KERN_INFO "resume menu\n");
+
+    return 0;
+}
+
+
+
+
+
+int initPolicy(void)
+{
+    int cpu;
+    for_each_online_cpu(cpu)
+    {
+retry:
+        if(cpufreq_policies[cpu] = cpufreq_cpu_get(cpu))
+            printk(KERN_INFO " ####### Success init cpufreq_policies[%d] for xdma \n",cpu);
+        else
+        {
+            printk(KERN_INFO " ####### Fail init cpufreq_policies[%d] for xdma \n",cpu);
+            mdelay(10);
+            printk(KERN_INFO " ####### Retry init cpufreq_policies[%d] for xdma \n",cpu);
+            goto retry;
+        }
+    }
+    return 0;
+}
+
+
+
 module_init(xdma_init);
 module_exit(xdma_cleanup);
 
@@ -3341,3 +3561,4 @@ EXPORT_SYMBOL(DmaSendPages);
 EXPORT_SYMBOL(DmaSendPkt);
 EXPORT_SYMBOL(DmaSendPages_Tx);
 EXPORT_SYMBOL(Dma_get_ringparam);
+

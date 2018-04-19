@@ -1,49 +1,49 @@
 /*******************************************************************************
 ** © Copyright 2012 - 2013 Xilinx, Inc. All rights reserved.
-** This file contains confidential and proprietary information of Xilinx, Inc. and 
+** This file contains confidential and proprietary information of Xilinx, Inc. and
 ** is protected under U.S. and international copyright and other intellectual property laws.
 *******************************************************************************
-**   ____  ____ 
-**  /   /\/   / 
-** /___/  \  /   Vendor: Xilinx 
-** \   \   \/    
+**   ____  ____
+**  /   /\/   /
+** /___/  \  /   Vendor: Xilinx
+** \   \   \/
 **  \   \
-**  /   /          
+**  /   /
 ** /___/    \
 ** \   \  /  \   Virtex-7 FPGA XT Connectivity Targeted Reference Design
 **  \___\/\___\
-** 
+**
 **  Device: xc7v690t
 **  Version: 1.0
 **  Reference: UG962
-**     
+**
 *******************************************************************************
 **
-**  Disclaimer: 
+**  Disclaimer:
 **
-**    This disclaimer is not a license and does not grant any rights to the materials 
-**    distributed herewith. Except as otherwise provided in a valid license issued to you 
-**    by Xilinx, and to the maximum extent permitted by applicable law: 
-**    (1) THESE MATERIALS ARE MADE AVAILABLE "AS IS" AND WITH ALL FAULTS, 
-**    AND XILINX HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS, EXPRESS, IMPLIED, OR STATUTORY, 
-**    INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, NON-INFRINGEMENT, OR 
-**    FITNESS FOR ANY PARTICULAR PURPOSE; and (2) Xilinx shall not be liable (whether in contract 
-**    or tort, including negligence, or under any other theory of liability) for any loss or damage 
-**    of any kind or nature related to, arising under or in connection with these materials, 
-**    including for any direct, or any indirect, special, incidental, or consequential loss 
-**    or damage (including loss of data, profits, goodwill, or any type of loss or damage suffered 
-**    as a result of any action brought by a third party) even if such damage or loss was 
+**    This disclaimer is not a license and does not grant any rights to the materials
+**    distributed herewith. Except as otherwise provided in a valid license issued to you
+**    by Xilinx, and to the maximum extent permitted by applicable law:
+**    (1) THESE MATERIALS ARE MADE AVAILABLE "AS IS" AND WITH ALL FAULTS,
+**    AND XILINX HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS, EXPRESS, IMPLIED, OR STATUTORY,
+**    INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, NON-INFRINGEMENT, OR
+**    FITNESS FOR ANY PARTICULAR PURPOSE; and (2) Xilinx shall not be liable (whether in contract
+**    or tort, including negligence, or under any other theory of liability) for any loss or damage
+**    of any kind or nature related to, arising under or in connection with these materials,
+**    including for any direct, or any indirect, special, incidental, or consequential loss
+**    or damage (including loss of data, profits, goodwill, or any type of loss or damage suffered
+**    as a result of any action brought by a third party) even if such damage or loss was
 **    reasonably foreseeable or Xilinx had been advised of the possibility of the same.
 
 
 **  Critical Applications:
 **
-**    Xilinx products are not designed or intended to be fail-safe, or for use in any application 
-**    requiring fail-safe performance, such as life-support or safety devices or systems, 
+**    Xilinx products are not designed or intended to be fail-safe, or for use in any application
+**    requiring fail-safe performance, such as life-support or safety devices or systems,
 **    Class III medical devices, nuclear facilities, applications related to the deployment of airbags,
-**    or any other applications that could lead to death, personal injury, or severe property or 
-**    environmental damage (individually and collectively, "Critical Applications"). Customer assumes 
-**    the sole risk and liability of any use of Xilinx products in Critical Applications, subject only 
+**    or any other applications that could lead to death, personal injury, or severe property or
+**    environmental damage (individually and collectively, "Critical Applications"). Customer assumes
+**    the sole risk and liability of any use of Xilinx products in Critical Applications, subject only
 **    to applicable laws and regulations governing limitations on product liability.
 
 **  THIS COPYRIGHT NOTICE AND DISCLAIMER MUST BE RETAINED AS PART OF THIS FILE AT ALL TIMES.
@@ -54,8 +54,8 @@
  *
  * @file xgadapter.c
  *
- * This is the Linux Ethernet driver for the XPS_LL_TEMAC core. It registers 
- * with the TCP/IP stack above it and with the Xilinx base DMA driver (xdma) 
+ * This is the Linux Ethernet driver for the XPS_LL_TEMAC core. It registers
+ * with the TCP/IP stack above it and with the Xilinx base DMA driver (xdma)
  * below it.
  *
  * Author: Xilinx, Inc.
@@ -68,30 +68,30 @@
  *
  * With the way the hardened Temac works, the driver needs to communicate
  * with the PHY controller. Since each board will have a different
- * type of PHY, this driver supports MII and 1000BASE-X types under 
- * compile-time macros. For your specific board, you will want to replace 
+ * type of PHY, this driver supports MII and 1000BASE-X types under
+ * compile-time macros. For your specific board, you will want to replace
  * this code with code of your own for your specific board.
  *
  * <b> Checksum Offload </b>
  *
  * TX or RX checksum offloading can be enabled or disabled via ethtool.
  *
- * <b> Transmit CSO: </b> 
- * If TX checksum offload is enabled, when the ethernet stack wants us 
+ * <b> Transmit CSO: </b>
+ * If TX checksum offload is enabled, when the ethernet stack wants us
  * to perform the checksum in hardware, skb->ip_summed is set to CHECKSUM_HW
- * or CHECKSUM_PARTIAL (depending on the OS version). Otherwise skb->ip_summed 
- * is CHECKSUM_NONE, meaning the checksum is already done, or 
- * CHECKSUM_UNNECESSARY, meaning checksumming is turned off (e.g. for a 
+ * or CHECKSUM_PARTIAL (depending on the OS version). Otherwise skb->ip_summed
+ * is CHECKSUM_NONE, meaning the checksum is already done, or
+ * CHECKSUM_UNNECESSARY, meaning checksumming is turned off (e.g. for a
  * loopback interface)
  *
- * When the driver is requested to transmit a packet, the ethernet stack 
- * above will have already computed the pseudoheader csum value and have 
+ * When the driver is requested to transmit a packet, the ethernet stack
+ * above will have already computed the pseudoheader csum value and have
  * placed it in the TCP/UDP header.
  *
  * The IP header csum has also already been computed and inserted.
  *
  * Since the IP header with it's own csum should compute to a null
- * csum, it should be ok to include it in the hw csum. 
+ * csum, it should be ok to include it in the hw csum.
  *
  * <b> Receive CSO: </b>
  * This hardware only supports proper checksum calculations
@@ -102,9 +102,9 @@
  * The skb->csum field is set to the actual checksum value as returned
  * by the hardware, before it is passed up the stack.
  *
- * If we set skb->ip_summed to CHECKSUM_COMPLETE or CHECKSUM_HW 
- * (depending on the OS version), the ethernet stack above will compute 
- * only the pseudoheader csum value and add it to the partial checksum 
+ * If we set skb->ip_summed to CHECKSUM_COMPLETE or CHECKSUM_HW
+ * (depending on the OS version), the ethernet stack above will compute
+ * only the pseudoheader csum value and add it to the partial checksum
  * (already computed and placed in skb->csum) and verify it.
  *
  * Setting skb->ip_summed to CHECKSUM_NONE means that the hardware
@@ -121,13 +121,13 @@
  *    packet determined by parsing the packet. In this case
  *    the ethernet stack will assume any prior checksum
  *    value was miscomputed and throw it away.
- * 3) skb->ip_summed was set to CHECKSUM_COMPLETE or CHECKSUM_HW, 
+ * 3) skb->ip_summed was set to CHECKSUM_COMPLETE or CHECKSUM_HW,
  *    skb->csum was set, but the result does not check out ok by the
  *    ethernet stack.
  *
- * The minimum transfer packet size over the wire is 64 bytes. If the 
- * packet is sent as exactly 64 bytes, then it probably contains some 
- * random padding bytes. It is somewhat difficult to determine the 
+ * The minimum transfer packet size over the wire is 64 bytes. If the
+ * packet is sent as exactly 64 bytes, then it probably contains some
+ * random padding bytes. It is somewhat difficult to determine the
  * actual length of the real packet data, so we just let the stack recheck the
  * checksum for us.
  *
@@ -143,18 +143,18 @@
  *
  * <b> Checksum Offload and FCS Stripping: </b>
  * If the FCS stripping feature is disabled, and checksum offload is
- * enabled, then the received packet will contain the FCS field, which 
+ * enabled, then the received packet will contain the FCS field, which
  * would have been included in the hardware checksum operation. This 4-byte
- * FCS value needs to be subtracted back out of the checksum value computed 
+ * FCS value needs to be subtracted back out of the checksum value computed
  * by hardware as it is not included in a normal ethernet packet checksum.
- * 
+ *
  * This combination has not been adequately tested in this driver.
  *
  * MODIFICATION HISTORY:
  *
  * Ver   Date     Changes
  * ----- -------- -------------------------------------------------------
- * 1.0  05/15/12 First release 
+ * 1.0  05/15/12 First release
  *
  ******************************************************************************/
 
@@ -204,22 +204,23 @@
 #define NW_PATH_OFFSET      0xB000
 #endif
 
-#ifdef USE_NW_PATH1
-#define TX_ENGINE           1       /**< DMA Engine number of TX engine */
-#define RX_ENGINE           33      /**< DMA Engine number of RX engine */
-#define NW_PATH_OFFSET	    0xC000
-#endif
 
-#ifdef USE_NW_PATH2
-#define TX_ENGINE           2       /**< DMA Engine number of TX engine */
-#define RX_ENGINE           34      /**< DMA Engine number of RX engine */
-#define NW_PATH_OFFSET	    0xD000
-#endif
-#ifdef USE_NW_PATH3
-#define TX_ENGINE           3       /**< DMA Engine number of TX engine */
-#define RX_ENGINE           35      /**< DMA Engine number of RX engine */
-#define NW_PATH_OFFSET	    0xE000
-#endif
+//#ifdef USE_NW_PATH1
+//#define TX_ENGINE           1       /**< DMA Engine number of TX engine */
+//#define RX_ENGINE           33      /**< DMA Engine number of RX engine */
+//#define NW_PATH_OFFSET	    0xC000
+//#endif
+
+//#ifdef USE_NW_PATH2
+//#define TX_ENGINE           2       /**< DMA Engine number of TX engine */
+//#define RX_ENGINE           34      /**< DMA Engine number of RX engine */
+//#define NW_PATH_OFFSET	    0xD000
+//#endif
+//#ifdef USE_NW_PATH3
+//#define TX_ENGINE           3       /**< DMA Engine number of TX engine */
+//#define RX_ENGINE           35      /**< DMA Engine number of RX engine */
+//#define NW_PATH_OFFSET	    0xE000
+//#endif
 //----------------
 
 #define DESIGN_MODE_ADDRESS 0x9004
@@ -230,7 +231,7 @@
 #define INITIALIZED_FIRST   2       /**< Driver state during registering.
                                     * UserInit() will be invoked for both TX and RX engines. This is an
                                     * intermediate state after the first UserInit() is invoked. */
-#define INITIALIZED_SECOND  3       /**< Driver state during registering 
+#define INITIALIZED_SECOND  3       /**< Driver state during registering
                                     * UserInit() will be invoked for both TX and RX engines. This is an
                                     * intermediate state after the second UserInit() is invoked. */
 #define READY               4       /**< Driver state after registering. */
@@ -274,7 +275,7 @@ typedef enum DUPLEX { UNKNOWN_DUPLEX, HALF_DUPLEX, FULL_DUPLEX } DUPLEX;
 
 struct net_device *ndev = NULL;	    /* This networking device */
 
-/** @name Buffers to handle multi-fragment packets 
+/** @name Buffers to handle multi-fragment packets
  * @{
  */
 PktBuf Pkt[MAX_SKB_FRAGS];
@@ -326,7 +327,7 @@ static void read_xgemac(unsigned int);
 void disp_frag(unsigned char *, u32);
 #endif
 
-/** @name Our private per-device data. When a net_device is allocated we 
+/** @name Our private per-device data. When a net_device is allocated we
  * will ask for enough extra space for this.
  * @{
  */
@@ -340,7 +341,7 @@ void disp_frag(unsigned char *, u32);
 	struct timer_list phy_timer;	/* PHY monitoring timer */
 
 	u32 index;		                /* Which interface is this */
-	u32 xgmii_addr;		            /* The XGMII address of the PHY */	
+	u32 xgmii_addr;		            /* The XGMII address of the PHY */
 	u64 versionReg;                 /* User-specific version info */
 
 	void * TxHandle;                /* Handle of TX DMA engine */
@@ -381,7 +382,7 @@ struct net_local {
 	struct timer_list phy_timer;	/* PHY monitoring timer */
 
 	u32 index;		                /* Which interface is this */
-	u32 xgmii_addr;		            /* The XGMII address of the PHY */	
+	u32 xgmii_addr;		            /* The XGMII address of the PHY */
 	u32 versionReg;                 /* User-specific version info */
 
 	void * TxHandle;                /* Handle of TX DMA engine */
@@ -422,7 +423,7 @@ struct net_local {
  * @{
  */
 /** Strings displayed in ethtool statistics */
-static char xenet_ethtool_gstrings_stats[][ETH_GSTRING_LEN] = 
+static char xenet_ethtool_gstrings_stats[][ETH_GSTRING_LEN] =
 {
     "txpkts",       /**< Total number of TX packets */
     "txbytes",      /**< Total number of TX bytes */
@@ -432,7 +433,7 @@ static char xenet_ethtool_gstrings_stats[][ETH_GSTRING_LEN] =
     "rxlenerr",     /**< Total number of RX packet length errors */
     "rxcrcerr",     /**< Total number of RX packet CRC errors */
     "max_frags",    /**< Maximum number of fragments in TX packets */
-    
+
 };
 
 #define XENET_STATS_LEN sizeof(xenet_ethtool_gstrings_stats) / ETH_GSTRING_LEN
@@ -556,10 +557,10 @@ static void reset(struct net_device *dev, u32 line_num)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
 	struct net_local *lp = netdev_priv(dev);
-#else	
-	struct net_local *lp = (struct net_local *) dev->priv;	
-#endif	
-		
+#else
+	struct net_local *lp = (struct net_local *) dev->priv;
+#endif
+
 	u32 Options;
 #if defined DEBUG_NORMAL || defined DEBUG_VERBOSE
 	static u32 reset_cnt = 0;
@@ -628,9 +629,9 @@ static int get_phy_status(struct net_device *dev, DUPLEX * duplex, int *linkup)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
 	struct net_local *lp = netdev_priv(dev);
-#else	
-	struct net_local *lp = (struct net_local *) dev->priv;	
-#endif	
+#else
+	struct net_local *lp = (struct net_local *) dev->priv;
+#endif
 
 	u16 reg;
 
@@ -665,13 +666,13 @@ static void poll_gmii(unsigned long data)
 
 	dev = (struct net_device *) data;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28) 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
 	lp = netdev_priv(dev);
-#else	
-	lp = (struct net_local *) dev->priv;	
-#endif	
+#else
+	lp = (struct net_local *) dev->priv;
+#endif
 
-	
+
 
 /* First, find out what's going on with the PHY. */
     log_verbose(KERN_ERR "poll_gmii\n");
@@ -745,9 +746,9 @@ static int xenet_open(struct net_device *dev)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     lp = netdev_priv(dev);
-#else		
-    lp = (struct net_local *) dev->priv;	
-#endif	
+#else
+    lp = (struct net_local *) dev->priv;
+#endif
 
 	_XXgEthernet_Stop(&lp->Emac);
 	/* Set the MAC address each time opened. */
@@ -765,9 +766,9 @@ static int xenet_open(struct net_device *dev)
 	 */
 	Options = XXgEthernet_GetOptions(&lp->Emac);
 	Options |= XXGE_FLOW_CONTROL_OPTION;
-#ifdef ENABLE_JUMBO    
+#ifdef ENABLE_JUMBO
 	Options |= XXGE_JUMBO_OPTION;
-#endif    
+#endif
 	Options |= XXGE_TRANSMITTER_ENABLE_OPTION;
 	Options |= XXGE_RECEIVER_ENABLE_OPTION;
 #if XXGE_AUTOSTRIPPING
@@ -811,9 +812,9 @@ static int xenet_close(struct net_device *dev)
        #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
        	    lp = netdev_priv(dev);
        #else
-       	    lp = (struct net_local *) dev->priv;	
-       #endif	
-				
+       	    lp = (struct net_local *) dev->priv;
+       #endif
+
 	/* Shut down the PHY monitoring timer. */
 	del_timer_sync(&lp->phy_timer);
 	/* Stop Send queue */
@@ -828,9 +829,9 @@ static struct net_device_stats *xenet_get_stats(struct net_device *dev)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     struct net_local *lp = netdev_priv(dev);
-#else    		
-    struct net_local *lp = (struct net_local *) dev->priv;	
-#endif	
+#else
+    struct net_local *lp = (struct net_local *) dev->priv;
+#endif
 
 
     log_normal(KERN_INFO "xenet_get_stats: \n");
@@ -840,7 +841,7 @@ static struct net_device_stats *xenet_get_stats(struct net_device *dev)
 
 static int xenet_change_mtu(struct net_device *dev, int new_mtu)
 {
-        u32 SetMtu=0; 
+        u32 SetMtu=0;
 #ifdef CONFIG_XILINX_GIGE_VLAN
 	int head_size = XXGE_HDR_VLAN_SIZE;
 #else
@@ -849,9 +850,9 @@ static int xenet_change_mtu(struct net_device *dev, int new_mtu)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     struct net_local *lp = netdev_priv(dev);
-#else			
-    struct net_local *lp = (struct net_local *) dev->priv;	
-#endif	
+#else
+    struct net_local *lp = (struct net_local *) dev->priv;
+#endif
 
 
 	int max_frame = new_mtu + head_size + XXGE_TRL_SIZE;
@@ -878,9 +879,9 @@ static int xenet_set_mac_address(struct net_device *dev, void * ptr)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     struct net_local *lp = netdev_priv(dev);
-#else		
-    struct net_local *lp = (struct net_local *) dev->priv;	
-#endif	
+#else
+    struct net_local *lp = (struct net_local *) dev->priv;
+#endif
 
 	struct sockaddr *addr = ptr;
 
@@ -975,9 +976,9 @@ static int xenet_Send_internal(struct sk_buff *skb, struct net_device *dev)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     lp = netdev_priv(dev);
-#else	    	
-    lp = (struct net_local *) dev->priv;	
-#endif    
+#else
+    lp = (struct net_local *) dev->priv;
+#endif
 
     if(lp->DriverState != READY) return XST_FAILURE;
     log_verbose(KERN_INFO "Came in with skb %x skb->data %x\n", (u32) skb, (u32) skb->data);
@@ -1003,23 +1004,23 @@ static int xenet_Send_internal(struct sk_buff *skb, struct net_device *dev)
     Pkt[0].bufInfo = (unsigned char *)skb;
     Pkt[0].size = len;
     Pkt[0].flags = PKT_SOP;
-    Pkt[0].userInfo = skb->len;     // Required for packet FIFO 
+    Pkt[0].userInfo = skb->len;     // Required for packet FIFO
 
 #ifdef DEBUG_VERBOSE
     read_skb_info(skb);
 #endif
-    log_normal("TX pkt csum field contains %02x %02x\n", 
+    log_normal("TX pkt csum field contains %02x %02x\n",
                 (u8)(skb->data[0x32]), (u8)(skb->data[0x33]));
 
-    
+
 #ifdef DEBUG_VERBOSE
     log_verbose("TX frag 0 pkt len is %d, flags %x\n", Pkt[0].size, Pkt[0].flags);
-    log_verbose(KERN_INFO "Fragment 0: len is %d, buf is %x\n", 
+    log_verbose(KERN_INFO "Fragment 0: len is %d, buf is %x\n",
                                             len, (u32) (skb->data));
     disp_frag(skb->data, len);
 #endif
 
-    if(total_frags == 1) 
+    if(total_frags == 1)
     {
         Pkt[0].flags |= PKT_EOP;
         result = DmaSendPkt(lp->TxHandle, Pkt, 1);
@@ -1065,7 +1066,7 @@ static int xenet_Send_internal(struct sk_buff *skb, struct net_device *dev)
 	    }
 
             if(total_frags == max)
-                Pkt[i - 1].flags = PKT_EOP; 
+                Pkt[i - 1].flags = PKT_EOP;
 
             result = DmaSendPkt(lp->TxHandle, Pkt, i);
             if(result)
@@ -1121,11 +1122,11 @@ static void xenet_tx_timeout(struct net_device *dev)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     lp = netdev_priv(dev);
-#else		
-    lp = (struct net_local *) dev->priv;	
-#endif	
+#else
+    lp = (struct net_local *) dev->priv;
+#endif
 
-	
+
 	printk(KERN_ERR
 	       "%s: XXgEthernet: exceeded transmit timeout of %lu ms.  Resetting emac.\n",
 	       dev->name, TX_TIMEOUT * 1000UL / HZ);
@@ -1142,9 +1143,9 @@ xenet_ethtool_get_settings(struct net_device *dev, struct ethtool_cmd *ecmd)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     struct net_local *lp = netdev_priv(dev);
-#else			
-    struct net_local *lp = (struct net_local *) dev->priv;	
-#endif	
+#else
+    struct net_local *lp = (struct net_local *) dev->priv;
+#endif
 
 
 	u32 mac_options;
@@ -1161,10 +1162,10 @@ xenet_ethtool_get_settings(struct net_device *dev, struct ethtool_cmd *ecmd)
 
 	ecmd->duplex = DUPLEX_FULL;
 	ecmd->supported |= (SUPPORTED_FIBRE);
-	ecmd->port = PORT_FIBRE; 
+	ecmd->port = PORT_FIBRE;
 	ecmd->speed = SPEED_10000;
 	ecmd->autoneg = AUTONEG_DISABLE;
-	ecmd->advertising |= ADVERTISED_FIBRE; 
+	ecmd->advertising |= ADVERTISED_FIBRE;
 
 
 	ecmd->phy_address = lp->xgmii_addr;
@@ -1185,10 +1186,10 @@ static void xenet_ethtool_get_ringparam(struct net_device *dev,
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     struct net_local *lp = netdev_priv(dev);
-#else			
-    struct net_local *lp = (struct net_local *) dev->priv;	
-#endif	
-         
+#else
+    struct net_local *lp = (struct net_local *) dev->priv;
+#endif
+
         Dma_get_ringparam(lp->TxHandle,ering);
         Dma_get_ringparam(lp->RxHandle,ering);
 
@@ -1208,9 +1209,9 @@ xenet_ethtool_get_regs(struct net_device *dev, struct ethtool_regs *regs,
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
 	struct net_local *lp = netdev_priv(dev);
-#else	
-	struct net_local *lp = (struct net_local *) dev->priv;	
-#endif	
+#else
+	struct net_local *lp = (struct net_local *) dev->priv;
+#endif
 
 	u16 * data = (u16 *) ret;
 	int i;
@@ -1237,14 +1238,14 @@ xenet_ethtool_get_drvinfo(struct net_device *dev, struct ethtool_drvinfo *ed)
 }
 
 static void
-xenet_ethtool_get_pauseparam(struct net_device *dev, 
+xenet_ethtool_get_pauseparam(struct net_device *dev,
                              struct ethtool_pauseparam *epp)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     struct net_local *lp = netdev_priv(dev);
-#else		
-    struct net_local *lp = (struct net_local *) dev->priv;	
-#endif	
+#else
+    struct net_local *lp = (struct net_local *) dev->priv;
+#endif
 
 	struct ethtool_cmd ecmd;
 	int ret = -EOPNOTSUPP;
@@ -1282,15 +1283,15 @@ static u32 xenet_ethtool_get_sg(struct net_device *dev)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 33)
 static int xenet_ethtool_get_sset_count(struct net_device *dev, int sset)
-{    
-	log_normal(KERN_INFO "ethtool_get_sset_count %d\n", XENET_STATS_LEN);    
+{
+	log_normal(KERN_INFO "ethtool_get_sset_count %d\n", XENET_STATS_LEN);
 
-	switch (sset) {    
-		case ETH_SS_STATS:        
-			return XENET_STATS_LEN;    
+	switch (sset) {
+		case ETH_SS_STATS:
+			return XENET_STATS_LEN;
 
-		default:        
-			return -EOPNOTSUPP;    
+		default:
+			return -EOPNOTSUPP;
 			}
 }
 #else
@@ -1317,11 +1318,11 @@ static void xenet_ethtool_get_stats(struct net_device *dev, struct ethtool_stats
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
 	struct net_local *lp = netdev_priv(dev);
-#else			
-	struct net_local *lp = (struct net_local *) dev->priv;	
-#endif	
+#else
+	struct net_local *lp = (struct net_local *) dev->priv;
+#endif
 
-		
+
     log_normal(KERN_ERR "ethtool_get_stats\n");
 
 
@@ -1345,9 +1346,9 @@ static int xenet_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     struct net_local *lp = netdev_priv(dev);
-#else			
-    struct net_local *lp = (struct net_local *) dev->priv;	
-#endif	
+#else
+    struct net_local *lp = (struct net_local *) dev->priv;
+#endif
 
 
 	/* gmii_ioctl_data has 4 u16 fields: phy_id, reg_num, val_in & val_out */
@@ -1360,17 +1361,17 @@ static int xenet_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 	case SIOCGMIIPHY:	/* Get address of GMII PHY in use. */
         log_normal(KERN_INFO "xenet_ioctl: SIOCGMIIPHY\n");
 	case SIOCDEVPRIVATE:	/* for binary compat, remove in 2.5 */
-        if(cmd == SIOCDEVPRIVATE) 
+        if(cmd == SIOCDEVPRIVATE)
             log_normal(KERN_INFO "xenet_ioctl: SIOCDEVPRIVATE\n");
 
 		data->phy_id = lp->xgmii_addr;
 		/* Fall Through */
 
 	case SIOCGMIIREG:	/* Read GMII PHY register. */
-        if(cmd == SIOCGMIIREG) 
+        if(cmd == SIOCGMIIREG)
             log_normal(KERN_INFO "xenet_ioctl: SIOCGMIIREG\n");
 	case SIOCDEVPRIVATE + 1:	/* for binary compat, remove in 2.5 */
-        if(cmd == (SIOCDEVPRIVATE+1)) 
+        if(cmd == (SIOCDEVPRIVATE+1))
             log_normal(KERN_INFO "xenet_ioctl: SIOCDEVPRIVATE+1\n");
 		if (data->phy_id > 31 || data->reg_num > 31)
 			return -ENXIO;
@@ -1389,7 +1390,7 @@ static int xenet_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 	case SIOCSMIIREG:	/* Write GMII PHY register. */
         log_normal(KERN_INFO "xenet_ioctl: SIOCSMIIREG\n");
 	case SIOCDEVPRIVATE + 2:	/* for binary compat, remove in 2.5 */
-        if(cmd == (SIOCDEVPRIVATE+2)) 
+        if(cmd == (SIOCDEVPRIVATE+2))
             log_normal(KERN_INFO "xenet_ioctl: SIOCDEVPRIVATE+2\n");
 
 		if (!capable(CAP_NET_ADMIN))
@@ -1438,9 +1439,9 @@ static int xtenet_init_top(void)
      */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     lp = netdev_priv(ndev);
-#else			
-    lp = (struct net_local *) ndev->priv;	
-#endif	
+#else
+    lp = (struct net_local *) ndev->priv;
+#endif
     lp->ndev = ndev;
     lp->deferred_skb = NULL;
 
@@ -1464,7 +1465,7 @@ static int xtenet_init_top(void)
 	ufuncs.privData = ndev;
 #else
     ufuncs.privData = (u32) ndev;
-#endif	
+#endif
     ufuncs.mode = ETHERNET_APPMODE;
     handle = DmaRegister(TX_ENGINE, TEMAC_BAR, &ufuncs, TEMAC_PKTSIZE);
     if(handle == NULL) {
@@ -1493,7 +1494,7 @@ static int xtenet_init_top(void)
 	ufuncs.privData = ndev;
 #else
     ufuncs.privData = (u32) ndev;
-#endif	
+#endif
     ufuncs.mode = ETHERNET_APPMODE;
     handle = DmaRegister(RX_ENGINE, TEMAC_BAR, &ufuncs, TEMAC_PKTSIZE);
     if(handle == NULL) {
@@ -1539,7 +1540,7 @@ static struct ethtool_ops xenet_ethtool_ops = {
     .get_sset_count     = xenet_ethtool_get_sset_count,
 #else
     .get_stats_count    = xenet_ethtool_get_stats_count,
-#endif    
+#endif
     .get_strings        = xenet_ethtool_get_strings,
     .get_ethtool_stats  = xenet_ethtool_get_stats
 };
@@ -1587,17 +1588,17 @@ static int xtenet_init_bottom(unsigned int BarBase, unsigned int privdata)
 #endif
     // XGEMAC + 10GPHY offset from BAR0
     RegBase = BarBase + NW_PATH_OFFSET;
-	
+
     //Disable GEN/CHK performance mode
-    XIo_Out32 (BarBase + DESIGN_MODE_ADDRESS, PERF_DESIGN_MODE); 
+    XIo_Out32 (BarBase + DESIGN_MODE_ADDRESS, PERF_DESIGN_MODE);
 
     /* Get instance context information */
     ndev = (struct net_device *)privdata;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     lp = netdev_priv(ndev);
-#else      	
+#else
     lp = (struct net_local *) ndev->priv;
-#endif    
+#endif
 
 
 
@@ -1608,7 +1609,7 @@ static int xtenet_init_bottom(unsigned int BarBase, unsigned int privdata)
     if(lp->DriverState == INITIALIZED_TOP) {
         lp->DriverState = INITIALIZED_FIRST;
         return XST_SUCCESS;
-    } 
+    }
     else if(lp->DriverState == INITIALIZED_FIRST) {
         lp->DriverState = INITIALIZED_SECOND;
     }
@@ -1631,12 +1632,12 @@ static int xtenet_init_bottom(unsigned int BarBase, unsigned int privdata)
 
     log_verbose("Going to do CfgInitialize\n");
 #ifdef X86_64
-	if (XXgEthernet_CfgInitialize(&lp->Emac, &Temac_Config, RegBase) != XST_SUCCESS) 
+	if (XXgEthernet_CfgInitialize(&lp->Emac, &Temac_Config, RegBase) != XST_SUCCESS)
     {
 #else
-    if (XXgEthernet_CfgInitialize(&lp->Emac, &Temac_Config, (u32) RegBase) != XST_SUCCESS) 
+    if (XXgEthernet_CfgInitialize(&lp->Emac, &Temac_Config, (u32) RegBase) != XST_SUCCESS)
     {
-#endif	
+#endif
         printk(KERN_ERR "xgbeth_axi: Could not initialize device.\n");
         rc = -ENODEV;
         goto error;
@@ -1651,12 +1652,14 @@ static int xtenet_init_bottom(unsigned int BarBase, unsigned int privdata)
      mac_addr[5]=0xFF;
 #ifdef USE_NW_PATH0
      mac_addr[1]=0xBB;
+     /*
 #elif USE_NW_PATH1
      mac_addr[1]=0x00;
 #elif USE_NW_PATH2
      mac_addr[2]=0x00;
 #else
      mac_addr[3]=0x00;
+     */
 #endif
 
     if (_XXgEthernet_SetMacAddress(&lp->Emac, mac_addr) != XST_SUCCESS) {
@@ -1671,12 +1674,12 @@ static int xtenet_init_bottom(unsigned int BarBase, unsigned int privdata)
 
     _XXgEthernet_GetMacAddress(&lp->Emac,ndev->dev_addr);
 
-log_verbose("addr_len is %d, perm_addr[0] is %x, [1] = %x, [2] = %x, [3] = %x, perm_addr[4] is %x, [5] = %x\n", 
+log_verbose("addr_len is %d, perm_addr[0] is %x, [1] = %x, [2] = %x, [3] = %x, perm_addr[4] is %x, [5] = %x\n",
 	ndev->addr_len, ndev->dev_addr[0], ndev->dev_addr[1], ndev->dev_addr[2],
 		ndev->dev_addr[3], ndev->dev_addr[4], ndev->dev_addr[5]);
-    
 
-#ifdef ENABLE_JUMBO    
+
+#ifdef ENABLE_JUMBO
     lp->max_frame_size = XXGE_MAX_JUMBO_FRAME_SIZE;
 #else
     lp->max_frame_size = 1600;
@@ -1721,7 +1724,7 @@ log_verbose("addr_len is %d, perm_addr[0] is %x, [1] = %x, [2] = %x, [3] = %x, p
 #endif
 
     log_verbose(KERN_ERR "Registering net device\n");
-    
+
     rc = register_netdev(ndev);
     if (rc) {
         printk(KERN_ERR
@@ -1767,9 +1770,9 @@ int myRxGetPkt(void * handle, PktBuf * vaddr, unsigned int size, int numpkts, un
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     lp = netdev_priv(ndev);
-#else    	
+#else
     lp = (struct net_local *) ndev->priv;
-#endif    
+#endif
 
 
     /* Check if driver is ready */
@@ -1784,7 +1787,7 @@ int myRxGetPkt(void * handle, PktBuf * vaddr, unsigned int size, int numpkts, un
         pbuf = &(vaddr[i]);
         new_skb = alloc_skb(lp->max_frame_size, GFP_ATOMIC);
         if (new_skb == NULL) {
-            log_normal("Alloc SKB failed for %d\n",i);    
+            log_normal("Alloc SKB failed for %d\n",i);
             break;
         }
         /* Make sure we are long-word aligned */
@@ -1822,9 +1825,9 @@ int myRxPutPkt(void * handle, PktBuf * vaddr, int numpkts, unsigned int privdata
     ndev = (struct net_device *)privdata;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     lp = netdev_priv(ndev);
-#else    	
+#else
     lp = (struct net_local *) ndev->priv;
-#endif    
+#endif
 
     if((lp->DriverState != READY) && (lp->DriverState != UNREGISTERING))
     {
@@ -1854,13 +1857,13 @@ int myRxPutPkt(void * handle, PktBuf * vaddr, int numpkts, unsigned int privdata
 	len = pbuf->size;
 
 #ifdef DEBUG_VERBOSE
-        printk(KERN_INFO "Recv data: len %d data %x\n", 
+        printk(KERN_INFO "Recv data: len %d data %x\n",
                         len, (unsigned int)(skb->data));
         {
             unsigned char * dptr;
             int i;
             dptr = skb->data;
-            if(i<6) 
+            if(i<6)
                 disp_frag(skb->data, len);
         }
 #endif
@@ -1906,9 +1909,9 @@ int myTxPutPkt(void * handle, PktBuf * vaddr, int numpkts, unsigned int privdata
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     lp = netdev_priv(ndev);
-#else    	
+#else
     lp = (struct net_local *) ndev->priv;
-#endif    
+#endif
 
 
     if((lp->DriverState != READY) && (lp->DriverState != UNREGISTERING))
@@ -1952,15 +1955,15 @@ int myTxPutPkt(void * handle, PktBuf * vaddr, int numpkts, unsigned int privdata
 #endif
 
 #ifdef PM_SUPPORT
-    if( lp->DriverState != PM_SUSPEND ) 
+    if( lp->DriverState != PM_SUSPEND )
 #endif
-{       
+{
     if(netif_queue_stopped(ndev))
-        netif_wake_queue(ndev);    
+        netif_wake_queue(ndev);
 }
 
 
-    return 0; 
+    return 0;
 }
 #ifdef X86_64
 int mySetState(void * handle, UserState * ustate, u64 privdata)
@@ -1979,7 +1982,7 @@ int myGetState(void * handle, UserState * ustate, u64 privdata)
 #else
 int myGetState(void * handle, UserState * ustate, unsigned int privdata)
 {
-#endif   
+#endif
     struct net_device *ndev = NULL;
     struct net_local *lp = NULL;
 
@@ -1989,18 +1992,18 @@ int myGetState(void * handle, UserState * ustate, unsigned int privdata)
     ndev = (struct net_device *)privdata;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     lp = netdev_priv(ndev);
-#else    	
+#else
     lp = (struct net_local *) ndev->priv;
-#endif    
+#endif
 
 
 
-    if(lp->DriverState != READY) 
+    if(lp->DriverState != READY)
     {
         printk("xenet driver is not ready\n");
         return -1;
     }
-    
+
     /* Same state is being returned for both engines */
 
     //spin_lock(&RawLock);
@@ -2021,10 +2024,10 @@ int myGetState(void * handle, UserState * ustate, unsigned int privdata)
 
 #ifdef PM_SUPPORT
 //////////////////////////////////
-// Suspend_Early : 
+// Suspend_Early :
 //    a. stop TX on netif
 //    b. stop RX on PHY/MAC
-// 
+//
 #ifdef X86_64
 int mySetSuspend_Early(void * handle, UserState * ustate, u64 privdata)
 {
@@ -2142,7 +2145,7 @@ int mySetResume(void * handle, UserState * ustate, unsigned int privdata)
 
 
     if( lp->DriverState == PM_SUSPEND ) {
-    
+
 	/*
 	 * The following four functions will return an error if the
 	 * EMAC is already started.	 */
@@ -2161,7 +2164,7 @@ int mySetResume(void * handle, UserState * ustate, unsigned int privdata)
 	msleep(3);
 
     }
-    else 
+    else
 	log_verbose("PM.... xxgbeth ethernet PHY, MAC already up\n");
     msleep(3);
 
@@ -2204,9 +2207,9 @@ static void /*__exit*/ xtenet_cleanup(void)
     printk(KERN_INFO "Unregistering Xilinx GigE driver from kernel.\n");
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
     lp = netdev_priv(ndev);
-#else    	
+#else
     lp = (struct net_local *) ndev->priv;
-#endif    
+#endif
 
     /* Save state for checking later the state of the driver */
     state = lp->DriverState;

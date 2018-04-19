@@ -1,7 +1,7 @@
 ## Script to program the BPI flash on the VC709
 
 open_hw
-connect_hw_server -host localhost -port 60001
+connect_hw_server 
 current_hw_target [get_hw_targets */xilinx_tcf/Digilent/*]
 set_property PARAM.FREQUENCY 15000000 [get_hw_targets */xilinx_tcf/Digilent/*]
 open_hw_target
@@ -27,7 +27,7 @@ set_property PROGRAM.VERIFY  1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_
 set_property PROGRAM.ADDRESS_RANGE  {use_file} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
 
 ## point to the location of the MCS file (assumes starting in ready_to_test directory calling program_flash.tcl)
-set_property PROGRAM.FILES {/path/to/your/mcs} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0]]   
+set_property PROGRAM.FILES {/home/pgs7179/work/ncap_fpga/ncap_NIC_driver/HW/ncap.mcs} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0]]   
 
 set_property PROGRAM.BPI_RS_PINS {none} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
 startgroup 
