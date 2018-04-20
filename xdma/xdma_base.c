@@ -1015,7 +1015,7 @@ int IntrCheck(struct pci_dev * dev)
 
     state = Dma_mReadReg(base,REG_NCAP_STATE);
     printk(KERN_INFO "ncap_state %d !!  \n",state);
-	if(girqval & (0x0001 << 5) != 0){
+	if((girqval & (0x0001 << 5)) != 0){
         //gus
 		user_irq_type = Dma_mReadReg(base, REG_INTERRUPT_TYPE);
 		if(user_irq_type == 0){
