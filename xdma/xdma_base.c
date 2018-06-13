@@ -999,6 +999,7 @@ int IntrCheck(struct pci_dev * dev)
 	int i, retval=XST_FAILURE;
 	u32 user_irq_type;
     u32 state;
+    u32 ctrl_status;
 
 	lp = pci_get_drvdata(dev);
 	log_verbose(KERN_INFO "IntrCheck: device %x\n", (u32) dev);
@@ -1015,6 +1016,8 @@ int IntrCheck(struct pci_dev * dev)
 
     state = Dma_mReadReg(base,REG_NCAP_STATE);
     printk(KERN_INFO "ncap_state %d !!  \n",state);
+    ctrl_status = Dma_mReadReg(base,REG_DMA_CTRL_STATUS);
+    printk(KERN_INFO "dma cntrol status is %d  \n",ctrl_status);
 	if((girqval & (0x0001 << 5)) != 0){
         //gus
 		user_irq_type = Dma_mReadReg(base, REG_INTERRUPT_TYPE);
