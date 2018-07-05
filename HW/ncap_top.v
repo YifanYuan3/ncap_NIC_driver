@@ -1,4 +1,4 @@
-module ncap_top(
+module ncapp_top(
     input clk,
     input rst,
 
@@ -8,7 +8,8 @@ module ncap_top(
     input [31:0] threshold_high_tx,
     input [31:0] threshold_low_rx,
     input [31:0] threshold_safeguard,
-    input [31:0] aggressive_mode,
+    input        aggressive_mode,
+    input [31:0] interval_speculative,
     // packets
 
     input tx_tvalid,
@@ -21,48 +22,39 @@ module ncap_top(
     input [255:0] rx_tdata,
     input rx_tready,
 
-    output reg interrupt,
-    output reg interrupt_type,
-    output reg [3:0] state
+    output interrupt_z,
+    output reg [1:0] interrupt_type,
+    output [31:0] rx_count,
+    output reg [5:0] state
 
 );
 
-parameter IDLE =      4'b0001;
-parameter HIGH_PERF = 4'b0010;
-parameter GOTO_LOW  = 4'b0100;
-parameter TEMP      = 4'b1000;
+parameter IDLE =       6'b000001;
+parameter TEMP1      = 6'b000010;
+parameter HIGH_PERF =  6'b000100;
+parameter TEMP2      = 6'b001000;
+parameter GOTO_LOW  =  6'b010000;
+parameter TEMP3      = 6'b100000;
+
+
 
 parameter INTR_HIGH = 1;
 parameter INTR_LOW  = 0;
 
 wire timeout;
-wire [31:0] rx_count;
 wire [31:0] tx_count;
+
+wire [31:0] t1_value;
+
+reg interrupt_speculative;
+
+assign interrupt_z = interrupt_speculative | interrupt;
 
 
 reg  [31:0] count_safeguard;
 
+reg interrupt;
 
-reg tx_counter_rst;
-reg rx_counter_rst;
-
-reg [3:0] next_state;
-reg [3:0] next_state_1;
-
-
-always@(posedge clk)begin 
-    if(rst == 1 || (state != TEMP && state != GOTO_LOW)) begin 
-        count_safeguard <= 0;
-    end
-    else begin 
-        if(timeout == 1 )begin
-            count_safeguard <= count_safeguard + 1;
-        end
-        else begin 
-            count_safeguard <= count_safeguard;
-        end
-    end
-end
 
 timer timer_inst(
     .clk(clk),
@@ -71,10 +63,46 @@ timer timer_inst(
     .timeout(timeout )
 );
 
+timer_1 timer_speculative(
+    .clk(clk),
+    .rst(rst | interrupt_z ),
+    .counter(t1_value)
+);
+
+always@(posedge clk)begin
+    if(rst ==1)begin
+        interrupt_speculative <= 0;
+    end
+    else begin  
+        if(rx_tvalid == 1 && rx_tready == 1 && rx_tdata[127:96] == 32'h28_45_00_08 && t1_value > interval_speculative )begin
+            interrupt_speculative <= 1;
+        end
+        else begin
+            interrupt_speculative <= 0;
+        end
+    end
+end
+
+
+always@(posedge clk)begin
+    case({interrupt, interrupt_speculative})
+        2'b10:begin
+            interrupt_type[1] <= 0;
+        end
+        2'b01:begin
+            interrupt_type[1] <= 1;
+        end
+        default:begin
+            interrupt_type[1] <= interrupt_type[1];
+        end
+    endcase
+end
+
+
 
 tx_counter tc_inst(
     .clk(clk),
-    .rst(rst /*| tx_counter_rst*/ | timeout),
+    .rst(rst | timeout),
     .tx_count(tx_count),
     .tx_tvalid(tx_tvalid),
     .tx_tdata (tx_tdata),
@@ -85,7 +113,7 @@ tx_counter tc_inst(
 
 rx_counter rc_inst(
     .clk(clk),
-    .rst(rst /*| rx_counter_rst */| timeout),
+    .rst(rst | timeout),
     .rx_count(rx_count),
     .rx_tvalid(rx_tvalid),
     .rx_tdata (rx_tdata),
@@ -93,135 +121,110 @@ rx_counter rc_inst(
     .rx_tready(rx_tready)
 );
 
-always@(posedge clk)begin 
-    if(rst == 1)begin 
-        state <= IDLE;
-    end
-    else begin 
-        state <= next_state;
-    end
-end
+
 
 always@(posedge clk)begin
-    if(rst == 1 )begin
-        next_state_1 <= IDLE;
+    if(rst == 1)begin
+        state <= IDLE;
+        interrupt <=0;
+        interrupt_type[0] <= INTR_LOW;
+        count_safeguard <= 0;
     end
     else begin
         case(state)
-            IDLE: begin
-                next_state_1 <= HIGH_PERF;
+            IDLE:begin
+                count_safeguard <= 0;
+                if(rx_count > threshold_high_rx)begin
+                    interrupt <= 1;
+                    interrupt_type[0] <= INTR_HIGH;
+                    state <= TEMP1;
+                end
+                else begin
+                    interrupt <= 0;
+                    interrupt_type[0] <= INTR_LOW;
+                    state <= IDLE;
+                end
             end
-            TEMP: begin
-                next_state_1 <= IDLE;
+            TEMP1:begin
+                interrupt <= 0;
+                state <= HIGH_PERF;
+                count_safeguard <= 0;
+                interrupt_type[0] <= interrupt_type[0];
             end
-            HIGH_PERF: begin
-                next_state_1 <= GOTO_LOW;
+            HIGH_PERF:begin 
+                interrupt <= 0;
+                count_safeguard <= 0;
+                interrupt_type[0] <= interrupt_type[0];
+                if(timeout == 1 && rx_count < threshold_low_rx && tx_count < threshold_high_tx)begin
+                    state <= GOTO_LOW;
+                end
+                else begin
+                    state <= HIGH_PERF;
+                end
             end
-            GOTO_LOW:begin
-                if(rx_counter_rst == 1 )begin
-                    if(interrupt == 1 && interrupt_type == INTR_LOW)begin
-                        next_state_1 <= IDLE;
+            GOTO_LOW: begin
+                if(rx_count > threshold_low_rx || tx_count > threshold_high_tx)begin
+                    interrupt <= 1;
+                    interrupt_type[0] <= INTR_HIGH;
+                    state <= TEMP1;
+                    count_safeguard <= 0;
+                end
+                else if(timeout == 1)begin
+                    if(count_safeguard < threshold_safeguard)begin
+                        count_safeguard <= count_safeguard + 1;
+                        state <= TEMP2;
+                        interrupt <= (aggressive_mode == 1)? 0 : 1;
+                        interrupt_type[0] <= INTR_LOW;
                     end
                     else begin
-                        next_state_1 <= HIGH_PERF;
+                        interrupt <= 1;
+                        interrupt_type[0] <= INTR_LOW;
+                        state <= TEMP3;
+                        count_safeguard <= 0;
                     end
                 end
-                else begin 
-                    next_state_1 <= GOTO_LOW;
-                end
             end
-            default: begin
-                next_state_1 <= IDLE;
+            TEMP2:begin
+                interrupt <= 0;
+                state <= GOTO_LOW;
+                count_safeguard <= count_safeguard;
+                interrupt_type[0] <= interrupt_type[0];
+            end
+            TEMP3:begin
+                interrupt <= 0;
+                state <= IDLE;
+                count_safeguard <= 0;
+                interrupt_type[0] <= interrupt_type[0];
+            end
+            default:begin
+                state <= IDLE;
+                interrupt <=0;
+                interrupt_type[0] <= INTR_LOW;
+                count_safeguard <= 0;
             end
         endcase
     end
 end
 
+endmodule
 
-always@(*)begin 
-    case(state)
-        IDLE: begin
-            tx_counter_rst <= 0;
-            rx_counter_rst <= 0;
-            interrupt_type <= INTR_HIGH;
-            if(rx_count > threshold_high_rx )begin
-                interrupt <= 1;
-                next_state <= TEMP;
-            end
-            else begin
-                next_state <= IDLE;
-                interrupt <= 0;
-            end
-        end
 
-        TEMP: begin
-            interrupt <= 0;
-            interrupt_type <= INTR_HIGH;
-            rx_counter_rst <= 0;
-            tx_counter_rst <= 0;
-            next_state <= next_state_1;
-        end
-        
-        HIGH_PERF: begin
-            interrupt <= 0;
-            interrupt_type <= INTR_HIGH;
-            if(rx_count < threshold_low_rx && tx_count < threshold_high_tx && timeout == 1)begin
-                rx_counter_rst <= 1;
-                tx_counter_rst <= 1;
-                next_state <= TEMP;
-            end
-            else begin 
-                rx_counter_rst <= 0;
-                tx_counter_rst <= 0;
-                next_state <= HIGH_PERF;
-            end
-        end
 
-        GOTO_LOW: begin
-            //timer timeout
-            if(timeout == 1)begin
-                next_state <= TEMP;
-                //stay at goto low, and count safeguard increment 1
-                rx_counter_rst <= 0;
-                tx_counter_rst <= 0;
-                interrupt <= (aggressive_mode == 1)? 0:1;
-                interrupt_type <= INTR_LOW;
-            end
-            else begin
-                //go back to high perf
-                if(!(rx_count < threshold_low_rx && tx_count < threshold_high_tx) )begin 
-                    rx_counter_rst <= 1;
-                    tx_counter_rst <= 1;
-                    interrupt <= 1;
-                    next_state <= TEMP;
-                    interrupt_type <= INTR_HIGH;
-                end
-                // unsafe, go back to idle
-                else if(count_safeguard > threshold_safeguard)begin
-                    rx_counter_rst <= 1;
-                    tx_counter_rst <= 1;
-                    next_state <= TEMP;
-                    interrupt <= 1;
-                    interrupt_type <= INTR_LOW;
-                end
-                //stay here
-                else begin
-                    next_state <= GOTO_LOW;
-                    rx_counter_rst <= 0;
-                    tx_counter_rst <= 0;
-                    interrupt <= 0;
-                    interrupt_type <= INTR_LOW;
-                end
-            end
-        end
-        default: begin
-            next_state <= IDLE;
-            interrupt <= 0;
-            rx_counter_rst <= 0;
-            tx_counter_rst <= 0;
-            interrupt_type <= 0;
-        end
-    endcase
+module timer_1(
+    input clk,
+    input rst,
+    output reg [31:0] counter
+);
+
+
+
+always@(posedge clk)begin
+    if(rst == 1 )begin
+        counter <= 0;
+    end
+    else begin
+            counter <= counter + 1;
+    end
 end
 
 
